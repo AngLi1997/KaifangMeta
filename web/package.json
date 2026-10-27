@@ -13,8 +13,14 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.4",
+    "@codemirror/lang-xml": "^6.1.0",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@heartexlabs/label-studio": "1.4.0",
     "@vueuse/core": "^13.6.0",
     "alova": "^3.3.4",
+    "codemirror": "6.0.1",
     "colord": "^2.9.3",
     "echarts": "^5.6.0",
     "pinia": "^3.0.3",

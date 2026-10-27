@@ -36,9 +36,9 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [知识库与 Agent 版本](docs/platform/capability/knowledge-agent.md) | 知识库 / Agent 如何发布回滚 | 不可变快照、`prod` 别名、评测回归 | 设计中 |
 | [知识库与 Agent 引擎（WeKnora）](docs/platform/capability/weknora.md) | 如何用 WeKnora 承载知识库与网页版 Agent | 部署与对象映射、海量档案导入与存储、分区权限、自建界面、与标注的关系 | 设计中 |
 | **平台 · 数据与调度** | | | |
-| [数据标注](docs/platform/annotation/overview.md) | 标注模块总览 | 模块边界、分配标注（任务池 / 指定用户）与自由标注、平台用户与权限、核心对象、状态机、分期 | 设计中 |
-| [Label Studio 集成与语言](docs/platform/annotation/labelstudio.md) | 编辑器如何构建、嵌入、汉化 | 源码构建、嵌入接口、汉化来源、平台级中英文控制 | 设计中 |
-| [场景模板](docs/platform/annotation/templates.md) | 标注界面如何自定义 | 模板组成、参数与映射、内置场景库、自定义与版本 | 设计中 |
+| [数据标注](docs/platform/annotation/overview.md) | 标注模块总览 | 模块边界、分配标注（任务池 / 指定用户）与自由标注、平台用户与权限、核心对象、状态机、分期 | 部分实现 |
+| [Label Studio 集成与语言](docs/platform/annotation/labelstudio.md) | 编辑器如何构建、嵌入、汉化 | 源码构建、嵌入接口、汉化来源、平台级中英文控制 | 部分实现 |
+| [场景模板](docs/platform/annotation/templates.md) | 标注界面如何自定义 | 模板组成、参数与映射、内置场景库、自定义与版本 | 部分实现 |
 | [业务系统对接](docs/platform/annotation/integration.md) | 业务如何嵌入标注与收发数据 | 页面嵌入、海量数据引用模式、清单分片、接口、事件、时序 | 设计中 |
 | [数据采集](docs/platform/ingest.md) | 外部数据与现场硬件如何进入平台 | 连接器、原始区、edge-agent 上报与指令 | 设计中 |
 | [定时任务与异步处理](docs/platform/scheduler.md) | 长任务、定时任务如何执行 | PG 任务表、Worker、队列并发、重试超时幂等 | 部分实现 |
@@ -71,8 +71,8 @@ open docs/design/prototype.html#ar-import
 | 项 | 约定 |
 |----|------|
 | 配置 | 只用根目录 `.env`（模板 `.env.example`），后端、前端、`docker/docker-compose.yml`、启动脚本共用 |
-| 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam` 与 `console_authz` 两个 schema，仅按 `sub` 关联 |
-| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理 |
+| 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
+| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口） |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
 | 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（bucket `kaifang-meta-platform`）、etcd 2379、APISIX 9080 / 9180 |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |
@@ -140,7 +140,7 @@ uv run alembic revision -m "说明"
 ├── alembic                // 数据库迁移与 seed
 ├── app                    // 后端
 │   ├── iam                // 认证模块：账号、OIDC、Token、会话、身份目录 API、网关下发、运维命令
-│   ├── domains            // 控制台业务域：users、authorization、auditlog、accounts、events
+│   ├── domains            // 控制台业务域：users、authorization、auditlog、accounts、events、annotation（数据标注，annotation schema）
 │   ├── api/v1             // 控制台路由聚合入口
 │   ├── core               // 公共 CRUD、网关身份头校验、中间件、Redis
 │   ├── models / schemas   // 公共 ORM 基类与响应结构
@@ -153,5 +153,5 @@ uv run alembic revision -m "说明"
         ├── hooks          // usePageTable、usePermission 等
         ├── service        // alova 请求、OIDC 登录、接口函数
         ├── store          // 鉴权、动态路由（后端菜单 → 路由）、标签、主题
-        └── views          // 工作台、个人中心、system/*
+        └── views          // 工作台、个人中心、system/*、annotation/*
 ```

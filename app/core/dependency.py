@@ -71,8 +71,12 @@ class AuthControl:
         user = await cls.identify(request)
         CTX_USER_ID.set(user.id)
         # 整个请求在事务内执行并 SET LOCAL app.tenant_id，供 RLS 兜底（docs/gateway.md「轻租户」）
-        async with in_transaction("default") as console_conn, in_transaction("iam") as iam_conn:
-            for conn in (console_conn, iam_conn):
+        async with (
+            in_transaction("default") as console_conn,
+            in_transaction("iam") as iam_conn,
+            in_transaction("annotation") as annotation_conn,
+        ):
+            for conn in (console_conn, iam_conn, annotation_conn):
                 await conn.execute_query(
                     "SELECT set_config('app.tenant_id', $1, true), set_config('app.sub', $2, true)",
                     [CTX_TENANT_ID.get(), user.sub],

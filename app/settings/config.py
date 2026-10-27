@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # ---- 认证模块（docs/platform/auth/identity.md、docs/gateway.md「Token 设计」）----
     IAM_ISSUER: str = "http://localhost:9080/kaifang-meta/iam"
     IAM_SCHEMA: str = "iam"
+    ANNOTATION_SCHEMA: str = "annotation"
     # 系统租户：唯一的初始化租户（默认租户），平台超级管理员所在，持有 system 范围，可跨租户管理（docs/gateway.md「轻租户」）
     IAM_SYSTEM_TENANT: str = "t_system"
     IAM_ACCESS_TOKEN_TTL: int = 15 * 60
@@ -131,6 +132,7 @@ class Settings(BaseSettings):
             "connections": {
                 "default": self._pg(self.POSTGRES_SCHEMA),
                 "iam": self._pg(self.IAM_SCHEMA),
+                "annotation": self._pg(self.ANNOTATION_SCHEMA),
             },
             "apps": {
                 "models": {
@@ -145,6 +147,10 @@ class Settings(BaseSettings):
                 "iam": {
                     "models": ["app.iam.models"],
                     "default_connection": "iam",
+                },
+                "annotation": {
+                    "models": ["app.domains.annotation.models"],
+                    "default_connection": "annotation",
                 },
             },
             "use_tz": False,
