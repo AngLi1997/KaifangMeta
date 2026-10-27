@@ -7,7 +7,7 @@
 - **两层鉴权**：网关做身份认证与粗粒度访问控制（Token 有效、`aud`、租户开通、吊销、`scope`）；业务系统做细粒度授权（菜单、按钮、数据范围，统一权限组件按 `sub` 计算）。
 - **用户登录**：OIDC 授权码 + PKCE，由前端壳 `kaifang-meta-shell` 完成；认证模块持有 SSO 会话 Cookie，进入其他应用时静默换取该应用的 Token。
 - **服务调用**：client credentials 换 Service Token；代表用户时模式 B 用 Token Exchange，模式 A 用 `X-KM-On-Behalf-Of`。
-- **退出与禁用**：吊销 `sid` / `sub` / `tenant` 写入 Redis，网关所有节点即时生效；业务系统收 `user.disabled` / `user.enabled` 事件更新本地映射，账号创建与资料变更通过 `user.created` / `user.updated` 通知。
+- **退出与禁用**：吊销 `sid` / `sub` / `tenant` 写入 Redis，网关所有节点即时生效；业务系统收 `user.disabled` / `user.enabled` 事件更新本地映射，账号创建、资料变更与删除通过 `user.created` / `user.updated` / `user.deleted` 通知。
 - 失败语义固定：身份问题返回 `401`，权限或开通问题返回 `403`，前端壳只对 `401` 触发重新登录。
 
 ## 1 首次登录

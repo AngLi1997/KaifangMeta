@@ -47,6 +47,7 @@ export async function fetchAccountPage(params: Page & { username?: string, tenan
 }
 export const fetchCreateAccount = (data: Partial<Entity.AccountForm>) => request.Post<Ok>('/account/create', data)
 export const fetchUpdateAccount = (data: Partial<Entity.AccountForm> & Pick<Entity.Account, 'sub'>) => request.Post<Ok>('/account/update', data)
+export const fetchDeleteAccount = (sub: string) => request.Delete<Ok>('/account/delete', undefined, { params: { sub } })
 export const fetchUpdateMemberRoles = (data: { sub: string, tenant_id: string, role_ids: number[] }) => request.Post<Ok>('/user/roles', data)
 
 export function fetchTenantPage(params: Page & { name?: string }) {
@@ -54,6 +55,7 @@ export function fetchTenantPage(params: Page & { name?: string }) {
 }
 export const fetchCreateTenant = (data: Pick<Entity.Tenant, 'name'>) => request.Post<Ok>('/tenant/create', data)
 export const fetchUpdateTenant = (data: Entity.Tenant) => request.Post<Ok>('/tenant/update', data)
+export const fetchDeleteTenant = (tenant_id: string) => request.Delete<Ok>('/tenant/delete', undefined, { params: { tenant_id } })
 
 // ---- 角色 ----
 export function fetchRolePage(params: Page & { role_name?: string }) {

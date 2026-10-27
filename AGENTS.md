@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 这是一个**中台架构设计文档仓库**，根目录同时包含平台代码 KaifangMetaPlatform（后端基于 vue-fastapi-admin 改造的 FastAPI，前端基于 nova-admin），启动方式见 `README.md`。
 
 - `README.md` — 入口：总体拆分摘要 + 文档目录（每个文档的作用见此处，不在本文件重复）+ 控制台代码启动说明
+- `sdk/` — 按语言存放并独立发布的平台 SDK：Python `sdk/python/kaifang-meta-sdk/`、Java `sdk/java/kaifang-meta-spring-boot-starter/`、TypeScript `sdk/typescript/kaifang-meta-shell/`；各子项目维护自己的构建配置与版本，通过对应私服供业务系统引用，不把 SDK 源码复制进业务系统仓库
 - `app/iam/` — 认证模块（独立 `iam` schema）；`app/domains/` — 控制台后端业务域（用户、授权、审计、账号、事件，使用 `console_authz` schema；数据标注 `annotation` 使用独立 `annotation` schema）；业务组织由各业务系统维护；`app/core/`、`app/models/base.py`、`app/schemas/base.py` — 跨域公共能力；控制台只信任网关签名身份头、按 `sub` 关联本地用户；`app/api/v1/` — 路由聚合入口；`run.py`、`pyproject.toml`、`uv.lock` — 后端入口与本地依赖；`app/worker.py` — kaifang-meta-platform-worker（事件分发）；`web/` — 控制台前端（nova-admin）；`alembic/` — 数据库迁移与 seed；`docker/` — Dockerfile、Compose、镜像依赖清单、入口脚本、APISIX 与 Nginx 配置
 - 唯一配置入口是根目录 `.env`（模板 `.env.example`）；一键启动 `sh start-service.sh`；表结构只经 alembic 变更
 - `docs/*.md` — 总体与跨部署段设计；`docs/platform/` — 按平台模块拆分（`auth/`、`capability/`、`annotation/`、数据与调度）

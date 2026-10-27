@@ -1,11 +1,12 @@
 <script setup lang="tsx">
+import { message } from '@/utils'
 import type { DataTableColumns } from 'naive-ui'
 import { usePageTable, usePermission } from '@/hooks'
-import { fetchAccountPage, fetchTenantPage } from '@/service'
+import { fetchAccountPage, fetchDeleteAccount, fetchTenantPage } from '@/service'
 import { useAuthStore } from '@/store'
 import CopyText from '@/components/custom/CopyText.vue'
 import { COL_WIDTH, colWidth, renderTableActions } from '@/utils/table'
-import { NButton, NSpace, NTag } from 'naive-ui'
+import { NButton, NPopconfirm, NSpace, NTag } from 'naive-ui'
 import AccountModal from './components/AccountModal.vue'
 import MemberRolesModal from './components/MemberRolesModal.vue'
 
@@ -27,6 +28,13 @@ const statusOptions = [{ label: '全部', value: '' }, { label: '启用', value:
 onMounted(async () => {
   tenants.value = (await fetchTenantPage({ page: 1, page_size: 500 })).data ?? []
 })
+
+async function remove(sub: string) {
+  if ((await fetchDeleteAccount(sub)).isSuccess) {
+    message.success('已删除')
+    fetch()
+  }
+}
 
 const columns: DataTableColumns<Entity.IdentityAccount> = [
   { title: '登录名', key: 'username', minWidth: colWidth(16), ellipsis: { tooltip: true } },
@@ -92,6 +100,11 @@ const columns: DataTableColumns<Entity.IdentityAccount> = [
       ),
       hasPermission('post/api/v1/user/roles') && row.status === 'active' && (
         <NButton size="small" type="primary" text onClick={() => rolesRef.value?.open(row)}>角色</NButton>
+      ),
+      hasPermission('delete/api/v1/account/delete') && editable(row) && row.status === 'disabled' && !row.console_member?.is_superuser && (
+        <NPopconfirm onPositiveClick={() => remove(row.sub)}>
+          {{ default: () => '确认删除该账号？', trigger: () => <NButton size="small" type="error" text>删除</NButton> }}
+        </NPopconfirm>
       ),
     ]),
   },

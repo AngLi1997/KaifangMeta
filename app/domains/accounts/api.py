@@ -76,3 +76,21 @@ async def update_account(req: AccountUpdate):
     except iam.AccountError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return Success(msg="身份账号已更新")
+
+
+@router.delete("/delete", summary="删除身份账号")
+async def delete_account(sub: str = Query(..., description="身份账号 sub")):
+    account = await iam.get_account(sub)
+    if not account:
+        raise HTTPException(status_code=404, detail="身份账号不存在")
+    if not is_system_tenant() and account["tenant_id"] != CTX_TENANT_ID.get():
+        raise HTTPException(status_code=403, detail="只能删除本租户的账号")
+    if await User.filter(sub=sub, is_superuser=True).exists():
+        raise HTTPException(status_code=400, detail="控制台超级管理员不能删除")
+    try:
+        await iam.delete_account(sub)
+    except iam.AccountError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # 控制台成员随身份账号删除，角色绑定级联删除
+    await User.filter(sub=sub).delete()
+    return Success(msg="身份账号已删除")

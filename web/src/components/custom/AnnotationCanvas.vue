@@ -16,6 +16,8 @@ const props = defineProps<{
 
 const appStore = useAppStore()
 const frame = ref<HTMLIFrameElement>()
+// 1.4.0 在同一页面 destroy 后重建会残留上一份配置的布局（侧栏、画布），每次重渲染都换新 iframe
+const frameKey = ref(0)
 const error = ref('')
 let editor: any = null
 // 编辑器根 store（onLabelStudioLoad 传入），结果从这里取
@@ -75,8 +77,6 @@ function render() {
   const win = frame.value?.contentWindow as (typeof window & { LabelStudio?: any }) | null
   if (!win?.LabelStudio)
     return
-  editor?.destroy?.()
-  store = null
   // 编辑中的半截 XML 不交给编辑器（它会抛出未捕获的解析错误），只提示
   error.value = checkTemplateXml(props.config)
   if (error.value)
@@ -122,14 +122,19 @@ function getResult(): Record<string, unknown>[] | null {
   return store?.annotationStore?.selected?.serializeAnnotation() ?? null
 }
 
-watch(() => [props.config, props.data, props.result], render)
+watch(() => [props.config, props.data, props.result], () => {
+  editor = null
+  store = null
+  error.value = ''
+  frameKey.value++
+})
 onBeforeUnmount(() => editor?.destroy?.())
 defineExpose({ getResult })
 </script>
 
 <template>
   <div class="relative wh-full">
-    <iframe ref="frame" :srcdoc="srcdoc" class="block wh-full border-0" @load="onLoad" />
+    <iframe :key="frameKey" ref="frame" :srcdoc="srcdoc" class="block wh-full border-0" @load="onLoad" />
     <n-alert v-if="error" type="error" class="absolute left-4 right-4 top-4" :title="error" />
   </div>
 </template>

@@ -29,7 +29,7 @@ def upgrade() -> None:
     for name, path, url, order, icon in [
         ("MinIO", "minio", "http://localhost:9001", 1, "icon-park-outline:cloud-storage"),
         ("APISIX", "apisix", "http://localhost:9180/ui/", 2, "icon-park-outline:api"),
-        ("etcd", "etcd", "http://localhost:9010", 3, "icon-park-outline:database"),
+        ("ETCD", "etcd", "http://localhost:9010", 3, "icon-park-outline:database-network"),
     ]:
         menu_ids.append(
             conn.execute(

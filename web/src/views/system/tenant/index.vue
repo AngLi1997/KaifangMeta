@@ -1,15 +1,23 @@
 <script setup lang="tsx">
+import { message } from '@/utils'
 import type { DataTableColumns } from 'naive-ui'
 import { usePageTable, usePermission } from '@/hooks'
-import { fetchTenantPage } from '@/service'
+import { fetchDeleteTenant, fetchTenantPage } from '@/service'
 import CopyText from '@/components/custom/CopyText.vue'
-import { COL_WIDTH, colWidth } from '@/utils/table'
-import { NButton, NTag } from 'naive-ui'
+import { COL_WIDTH, colWidth, renderTableActions } from '@/utils/table'
+import { NButton, NPopconfirm, NTag } from 'naive-ui'
 import TenantModal from './components/TenantModal.vue'
 
 const { hasPermission } = usePermission()
 const modalRef = ref<InstanceType<typeof TenantModal>>()
 const { loading, rows, total, query, fetch, search, reset, changePage } = usePageTable(fetchTenantPage, { name: '' })
+
+async function remove(id: string) {
+  if ((await fetchDeleteTenant(id)).isSuccess) {
+    message.success('已删除')
+    fetch()
+  }
+}
 
 const columns: DataTableColumns<Entity.Tenant> = [
   { title: '租户名称', key: 'name', minWidth: colWidth(0, 12), ellipsis: { tooltip: true } },
@@ -28,9 +36,16 @@ const columns: DataTableColumns<Entity.Tenant> = [
     fixed: 'right',
     align: 'center',
     width: COL_WIDTH.actions,
-    render: row => hasPermission('post/api/v1/tenant/update')
-      ? <NButton size="small" text onClick={() => modalRef.value?.open(row)}>编辑</NButton>
-      : '-',
+    render: row => renderTableActions([
+      hasPermission('post/api/v1/tenant/update') && (
+        <NButton size="small" text onClick={() => modalRef.value?.open(row)}>编辑</NButton>
+      ),
+      hasPermission('delete/api/v1/tenant/delete') && row.status === 'disabled' && (
+        <NPopconfirm onPositiveClick={() => remove(row.id)}>
+          {{ default: () => '确认删除该租户？', trigger: () => <NButton size="small" type="error" text>删除</NButton> }}
+        </NPopconfirm>
+      ),
+    ]),
   },
 ]
 </script>

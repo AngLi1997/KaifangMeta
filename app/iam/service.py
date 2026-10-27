@@ -168,6 +168,29 @@ async def update_tenant(tenant_id: str, name: str, status: str) -> None:
     await sessions.set_tenant_revoked(tenant_id, status == "disabled")
 
 
+async def delete_tenant(tenant_id: str) -> None:
+    """只删除已停用的空租户；吊销键保留到自然过期，避免旧令牌复活"""
+    if tenant_id == SYSTEM_TENANT:
+        raise AccountError("系统租户不能删除")
+    async with in_transaction("iam") as conn:
+        tenant = await Tenant.select_for_update().using_db(conn).get_or_none(id=tenant_id)
+        if not tenant:
+            raise AccountError("租户不存在")
+        if tenant.status != "disabled":
+            raise AccountError("请先停用租户")
+        if await Account.filter(tenant_id=tenant_id).using_db(conn).exists():
+            raise AccountError("租户下仍有身份账号")
+        if await TenantMember.filter(tenant_id=tenant_id).using_db(conn).exists():
+            raise AccountError("租户仍有跨租户成员")
+        clients = await Client.select_for_update().using_db(conn).all()
+        if any(tenant_id in c.tenants for c in clients if c.client_id != settings.CONSOLE_CLIENT_ID):
+            raise AccountError("仍有接入应用开通该租户")
+        for console in (c for c in clients if c.client_id == settings.CONSOLE_CLIENT_ID):
+            console.tenants = [t for t in console.tenants if t != tenant_id]
+            await console.save(using_db=conn, update_fields=["tenants"])
+        await tenant.delete(using_db=conn)
+
+
 async def _set_members(conn, sub: str, primary: str, member_ids: list[str], username: str, email: str | None) -> bool:
     """同步成员租户（主租户不重复记录）；新加入的租户发 user.created。返回是否移除了租户"""
     wanted = list(dict.fromkeys(t for t in member_ids if t != primary))
@@ -310,6 +333,22 @@ async def update_account(
             await redis.delete(sessions.REVOKE_SUB + sub)
         if password or tenant_id != old_tenant_id or members_removed:
             await sessions.revoke_sub(sub)
+
+
+async def delete_account(sub: str) -> None:
+    """只删除已停用账号；sub 不复用，向主租户和成员租户发 user.deleted"""
+    async with in_transaction("iam") as conn:
+        account = await Account.select_for_update().using_db(conn).get_or_none(sub=sub)
+        if not account:
+            raise AccountError("身份账号不存在")
+        if account.status != "disabled":
+            raise AccountError("请先停用账号")
+        members = await TenantMember.filter(sub=sub).using_db(conn).values_list("tenant_id", flat=True)
+        for tenant_id in [account.tenant_id, *members]:
+            await Outbox.create(using_db=conn, type="user.deleted", subject=sub, tenant_id=tenant_id, data={"sub": sub})
+        await TenantMember.filter(sub=sub).using_db(conn).delete()
+        await account.delete(using_db=conn)
+    await sessions.revoke_sub(sub)
 
 
 async def authenticate_client(client_id: str, client_secret: str) -> Client | None:

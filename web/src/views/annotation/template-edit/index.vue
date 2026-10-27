@@ -22,7 +22,8 @@ const form = ref<Partial<Entity.AnnotationTemplate>>({
   name: '',
   code: '',
   modality: 'image',
-  config: `<View>
+  // 编辑已有模板时留空，避免加载前先渲染默认模板
+  config: route.query.id ? '' : `<View>
   <Image name="image" value="$image" zoom="true"/>
   <RectangleLabels name="label" toName="image">
     <Label value="目标" background="#2080f0"/>
@@ -49,7 +50,7 @@ const SAMPLE_IMAGE = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="
 const SAMPLE_TEXT = '2024年3月18日，××省档案局在杭州印发《关于开展档案数字化质量检查的通知》，由张明负责组织实施。'
 
 const previewConfig = refDebounced(computed(() => form.value.config ?? ''), 600)
-const xmlError = computed(() => checkTemplateXml(previewConfig.value))
+const xmlError = computed(() => previewConfig.value && checkTemplateXml(previewConfig.value))
 const sampleData = computed(() => Object.fromEntries(
   [...previewConfig.value.matchAll(/<(\w+)\s[^>]*?value="\$(\w+)"/g)].map(([, tag, key]) =>
     [key, tag === 'Image' ? SAMPLE_IMAGE : ['Text', 'HyperText', 'Header'].includes(tag) ? SAMPLE_TEXT : '']),
@@ -138,7 +139,7 @@ onMounted(load)
           class="absolute left-0 top-0 origin-top-left"
           :style="{ width: `${stage.width}px`, height: `${stage.height}px`, transform: `scale(${scale})` }"
         >
-          <AnnotationCanvas v-if="!xmlError" :config="previewConfig" :data="sampleData" />
+          <AnnotationCanvas v-if="previewConfig && !xmlError" :config="previewConfig" :data="sampleData" />
         </div>
       </div>
     </n-card>

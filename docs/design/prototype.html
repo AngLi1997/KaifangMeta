@@ -235,7 +235,7 @@ const PLATFORM_NAV = [
   ['认证', [['users', '身份账号'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
   ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型']]],
   ['数据', [['ingest', '数据采集'], ['label', '标注工单'], ['anno-mine', '我的标注', '3'], ['anno-tpl', '场景模板']]],
-  ['运维', [['jobs', '任务调度'], ['settings', '平台设置'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['etcd', 'http://localhost:9010']]]]],
+  ['运维', [['jobs', '任务调度'], ['settings', '平台设置'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['ETCD', 'http://localhost:9010']]]]],
 ];
 const ARCHIVE_NAV = [
   ['业务', [['ar-home', '工作台'], ['ar-list', '档案管理', '1,284'], ['ar-import', '档案导入', '2'], ['ar-label', '标注任务', '1'], ['ar-qa', '智能问答']]],
@@ -295,6 +295,7 @@ const pages = {
         ['<span class="m">u_8f21c0</span>', '<span class="m">admin</span>', S('系统租户'), 'admin@admin.com', D('启用', 'ok'), '系统租户 / 管理员 · 超级管理员', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
         ['<span class="m">u_3c90d1e7a2b4f615</span>', '<span class="m">city-admin</span>', S('市档案馆') + ' ' + S('省档案馆', 'ac'), 'city@example.cn', D('启用', 'ok'), '市档案馆 / 租户管理员', D('启用', 'ok'), '<span class="m mu">10-27 10:40</span>', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
         ['<span class="m">u_a11972bc3d5f804e</span>', '<span class="m">archive-auditor</span>', S('省档案馆'), 'auditor@example.cn', D('启用', 'ok'), '未开通', '未开通', '—', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
+        ['<span class="m">u_5d07e3a9c1b2f468</span>', '<span class="m">temp-scanner</span>', S('市档案馆'), 'scan@example.cn', D('停用', 'err'), '未开通', '未开通', '—', '<a class="btn ghost">编辑</a> <a class="btn ghost">删除</a>'],
       ]), true),
 
   tenants: () => ph('租户管理', '', '<button class="btn pri">新建租户</button>') +
@@ -302,6 +303,7 @@ const pages = {
       ['<b>系统租户</b>', '<span class="m">t_system</span>', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a>'],
       ['<b>省档案馆</b>', '<span class="m">t_5e2a9c1d7b3f4086</span>', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a>'],
       ['<b>市档案馆</b>', '<span class="m">t_43f12ac77e108d2b</span>', D('启用', 'ok'), '<span class="m mu">10-27 10:30</span>', '<a class="btn ghost">编辑</a>'],
+      ['<b>县档案馆（试点）</b>', '<span class="m">t_9b6c20e4f1a37d85</span>', D('停用', 'err'), '<span class="m mu">10-27 11:05</span>', '<a class="btn ghost">编辑</a> <a class="btn ghost">删除</a>'],
     ]), true),
 
   apps: () => ph('应用接入', '', '<button class="btn">导入 YAML</button><button class="btn pri">注册应用</button>') +

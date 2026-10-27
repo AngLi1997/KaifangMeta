@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from app.core.ctx import CTX_TENANT_ID
 from app.core.dependency import is_system_tenant, require_system_tenant
 from app.domains.tenants.schemas import TenantCreate, TenantUpdate
-from app.domains.users.models import User
+from app.domains.users.models import RoleBinding, User
 from app.iam import service as iam
 from app.iam.gateway import sync_platform_routes
 from app.schemas.base import Success, SuccessExtra
@@ -48,3 +48,18 @@ async def update_tenant(req: TenantUpdate):
     except iam.AccountError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return Success(msg="租户已更新")
+
+
+@router.delete("/delete", summary="删除租户")
+async def delete_tenant(tenant_id: str = Query(..., description="租户ID")):
+    require_system_tenant()
+    try:
+        await iam.delete_tenant(tenant_id)
+    except iam.AccountError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await RoleBinding.filter(tenant_id=tenant_id).delete()
+    try:
+        await sync_platform_routes()
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"租户已删除，但网关路由下发失败：{e!r}")
+    return Success(msg="租户已删除")
