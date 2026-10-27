@@ -1,0 +1,885 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}</style>
+<title>中台原型</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600&display=swap">
+<style>
+/* layout: 应用壳 = 顶栏 + 侧栏 + 内容区；平台与业务系统共用同一前端壳，仅主色不同 */
+:root {
+  --bg: #f3f5f7;
+  --panel: #ffffff;
+  --sunk: #f7f8fa;
+  --line: #dde2e8;
+  --fg: #19212b;
+  --muted: #6b7684;
+  --faint: #9aa3af;
+  --accent: #2b61a3;
+  --accent-soft: #e6eef8;
+  --ar-accent: #2f7a63;
+  --ar-soft: #e4f1ec;
+  --ok: #2f8a57; --ok-soft: #e5f3ea;
+  --warn: #a8680b; --warn-soft: #fbf0dc;
+  --err: #b8403a; --err-soft: #f9e5e3;
+  --paper: #fbfaf6; --ink: #3a3f47;
+  --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1317; --panel: #161b21; --sunk: #12171c; --line: #29313b; --fg: #e3e8ee;
+    --muted: #8d97a5; --faint: #5f6875; --accent: #73a7e3; --accent-soft: #1b2838;
+    --ar-accent: #5fbf9b; --ar-soft: #15291f;
+    --ok: #5cc287; --ok-soft: #142a1d; --warn: #e0a64a; --warn-soft: #2d2311; --err: #ec7a72; --err-soft: #2f1716;
+    --paper: #d9d6cc; --ink: #2c3036;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1317; --panel: #161b21; --sunk: #12171c; --line: #29313b; --fg: #e3e8ee;
+  --muted: #8d97a5; --faint: #5f6875; --accent: #73a7e3; --accent-soft: #1b2838;
+  --ar-accent: #5fbf9b; --ar-soft: #15291f;
+  --ok: #5cc287; --ok-soft: #142a1d; --warn: #e0a64a; --warn-soft: #2d2311; --err: #ec7a72; --err-soft: #2f1716;
+  --paper: #d9d6cc; --ink: #2c3036;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 13px; }
+a { color: inherit; text-decoration: none; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.frame { height: 100%; overflow: auto; }
+.archive { --accent: var(--ar-accent); --accent-soft: var(--ar-soft); }
+
+/* shell */
+.shell { min-width: 1180px; height: 100%; display: grid; grid-template-columns: 212px 1fr; grid-template-rows: 48px 1fr; }
+.shell.wb { grid-template-columns: 1fr; }
+.top { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; width: 180px; }
+.mark { width: 24px; height: 24px; border-radius: 4px; background: var(--accent); color: var(--panel); display: grid; place-items: center; font-family: var(--mono); font-size: 11px; font-weight: 500; }
+.crumb { color: var(--muted); display: flex; gap: 6px; }
+.crumb b { color: var(--fg); font-weight: 500; }
+.top .sp { flex: 1; }
+.top .ic { color: var(--muted); font-size: 12px; padding: 4px 8px; border-radius: 4px; }
+.top .ic:hover { background: var(--sunk); color: var(--fg); }
+.ava { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 500; }
+.side { background: var(--panel); border-right: 1px solid var(--line); padding: 12px 8px; display: flex; flex-direction: column; gap: 14px; overflow: auto; }
+.grp { display: flex; flex-direction: column; gap: 1px; }
+.grp > span { font-size: 11px; color: var(--faint); letter-spacing: .08em; padding: 4px 10px; }
+.nav { padding: 7px 10px; border-radius: 4px; color: var(--muted); display: flex; justify-content: space-between; }
+.nav:hover { background: var(--sunk); color: var(--fg); }
+.nav.on { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.nav i { font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.nav.sub { padding-left: 24px; font-size: 12px; }
+.main { overflow: auto; padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.main > * { flex-shrink: 0; }
+
+/* page parts */
+.ph { display: flex; align-items: center; gap: 12px; }
+.ph h1 { font-size: 16px; font-weight: 600; margin: 0; }
+.ph .sub { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.ph .sp { flex: 1; }
+.btn { font: inherit; font-size: 13px; padding: 6px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.btn.sm { padding: 3px 10px; font-size: 12px; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 4px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; min-width: 0; }
+.card > .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 500; }
+.card > .cb { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.grid { display: grid; gap: 16px; min-width: 0; }
+.bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inp, select.inp, textarea.inp { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--fg); min-width: 0; }
+textarea.inp { resize: vertical; line-height: 1.6; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg a { cursor: pointer; padding: 5px 12px; color: var(--muted); border-right: 1px solid var(--line); white-space: nowrap; }
+.seg a:last-child { border-right: 0; }
+.seg a.on { background: var(--accent-soft); color: var(--accent); }
+.tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line); }
+.tabs a { padding: 8px 0; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs a.on { color: var(--fg); border-color: var(--accent); font-weight: 500; }
+
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 9px 16px; background: var(--sunk); border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td a.lk { color: var(--accent); }
+.m { font-family: var(--mono); font-size: 12px; }
+.mu { color: var(--muted); }
+.tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 1px 8px; border-radius: 3px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.tag.ok { background: var(--ok-soft); color: var(--ok); }
+.tag.warn { background: var(--warn-soft); color: var(--warn); }
+.tag.err { background: var(--err-soft); color: var(--err); }
+.tag.ac { background: var(--accent-soft); color: var(--accent); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+.prog { height: 4px; background: var(--sunk); border-radius: 2px; overflow: hidden; width: 120px; }
+.prog i { display: block; height: 100%; background: var(--accent); }
+.kv { display: grid; grid-template-columns: 96px 1fr; gap: 8px 12px; align-items: baseline; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+pre.code { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.6; background: var(--sunk); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; overflow-x: auto; color: var(--fg); }
+.stat { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; }
+.stat b { font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 12px; }
+.tree { display: flex; flex-direction: column; gap: 2px; }
+.tree a { padding: 5px 8px; border-radius: 4px; color: var(--muted); }
+.tree a.on { background: var(--accent-soft); color: var(--accent); }
+.tree .l2 { padding-left: 24px; }
+.tree .l3 { padding-left: 40px; }
+.note { font-size: 12px; color: var(--muted); }
+
+/* capability cards */
+.caps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.cap { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.cap:hover { border-color: var(--accent); }
+.cap .t { display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+.cap .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* versions */
+.vl { display: flex; flex-direction: column; }
+.vi { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.vi:last-child { border-bottom: 0; }
+.vi .v { font-family: var(--mono); font-weight: 500; }
+.vi .d { color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+
+/* document mock */
+.doc { background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; position: relative; aspect-ratio: 210 / 297; max-width: 100%; padding: 9% 10%; display: flex; flex-direction: column; gap: 3.2%; overflow: hidden; }
+.doc .hdr { text-align: center; color: #b3312a; font-size: 20px; font-weight: 600; letter-spacing: .3em; }
+.doc .no { text-align: center; font-size: 11px; }
+.doc .rule { height: 2px; background: #b3312a; }
+.doc .tt { text-align: center; font-weight: 600; font-size: 13px; }
+.doc .ln { height: 7px; background: #c9c6bd; border-radius: 2px; }
+.doc .seal { position: absolute; right: 14%; bottom: 13%; width: 22%; aspect-ratio: 1; border: 2px solid #c8413a; border-radius: 50%; opacity: .75; }
+.box { position: absolute; border: 1.5px solid var(--b); background: color-mix(in srgb, var(--b) 10%, transparent); }
+.box span { position: absolute; top: -18px; left: -1.5px; background: var(--b); color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 2px; white-space: nowrap; }
+
+/* chat */
+.chat { display: flex; flex-direction: column; gap: 14px; }
+.msg { max-width: 72%; padding: 10px 14px; border-radius: 6px; line-height: 1.7; }
+.msg.u { align-self: flex-end; background: var(--accent-soft); }
+.msg.a { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
+.cite { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.step { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* login / portal */
+.center { min-height: 100%; display: grid; place-items: center; padding: 32px 16px; }
+.login { width: 380px; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 32px; display: flex; flex-direction: column; gap: 16px; }
+.login .inp { width: 100%; padding: 9px 12px; }
+.login .btn { justify-content: center; padding: 9px; }
+.portal { min-width: 1180px; min-height: 100%; display: grid; grid-template-rows: 48px 1fr; }
+.pbody { max-width: 1080px; width: 100%; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 20px; }
+.apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.app { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; }
+a.app:hover { border-color: var(--accent); }
+.app .mark { width: 40px; height: 40px; font-size: 13px; border-radius: 6px; }
+.app.off { opacity: .55; }
+.app .d { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.chk { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.chk input { accent-color: var(--accent); }
+/* workflow */
+.flow { display: grid; grid-template-columns: repeat(6, 1fr); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.flow a { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-right: 1px solid var(--line); color: var(--muted); }
+.flow a:last-child { border-right: 0; }
+.flow a:hover { background: var(--sunk); }
+.flow i { font-style: normal; flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--mono); font-size: 11px; }
+.flow small { display: block; font-size: 11px; color: var(--faint); }
+.flow a.done i { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.flow a.on { background: var(--accent-soft); color: var(--fg); font-weight: 500; }
+.flow a.on i { background: var(--accent); color: var(--panel); border-color: transparent; }
+.drop { border: 1.5px dashed var(--line); border-radius: 6px; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--sunk); text-align: center; }
+del { color: var(--err); background: var(--err-soft); padding: 0 4px; border-radius: 2px; }
+ins { color: var(--ok); background: var(--ok-soft); text-decoration: none; padding: 0 4px; border-radius: 2px; }
+@media (prefers-reduced-motion: no-preference) { .main { animation: fade .16s ease-out; } }
+@keyframes fade { from { opacity: .4; } to { opacity: 1; } }
+</style>
+
+<div class="frame" id="app"></div>
+
+<script>
+const T = (cols, rows) => `<div class="tw"><table><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const S = (t, k = '') => `<span class="tag ${k}">${t}</span>`;
+const D = (t, k) => `<span class="tag ${k}"><i class="dot"></i>${t}</span>`;
+const P = n => `<div class="bar"><div class="prog"><i style="width:${n}%"></i></div><span class="m mu">${n}%</span></div>`;
+const card = (head, body, flush) => `<div class="card"><div class="ch">${head}</div>${flush ? body : `<div class="cb">${body}</div>`}</div>`;
+
+// 能力目录：[名称, 标识, 类型, 可见性, 归属空间, 指标, 状态, 链接]
+const CAP_TYPE = { operator: '算子', pipeline: '流水线', model: '模型', kb: '知识库', agent: 'Agent' };
+const CAP_VIS = { public: ['公共', 'ok'], restricted: ['受限', 'warn'], private: ['私有', ''] };
+const CAPS = [
+  ['通用 OCR', 'ocr.general@2.3.0', 'operator', 'public', '', ['GPU · 实例 2/2', 'P95 410ms', '今日 18,240'], 'ok', '#op-ocr'],
+  ['版面分析', 'layout@1.4.1', 'operator', 'public', '', ['GPU · 实例 2/2', 'P95 260ms', '今日 9,812'], 'ok'],
+  ['要素抽取', 'extract.doc@1.2.0', 'operator', 'restricted', '', ['GPU · 实例 1/1', 'P95 1.8s', '今日 6,035'], 'ok'],
+  ['图像纠偏', 'image.deskew@1.0.3', 'operator', 'public', '', ['CPU · 实例 3/3', 'P95 90ms', '今日 21,507'], 'ok'],
+  ['去噪增强', 'image.denoise@1.1.0', 'operator', 'public', '', ['CPU · 实例 3/3', 'P95 140ms', '今日 20,996'], 'ok'],
+  ['印章识别', 'seal.detect@0.9.2', 'operator', 'public', '', ['GPU · 实例 1/1', 'P95 320ms', '今日 2,114'], 'warn'],
+  ['手写体识别', 'ocr.hand@0.6.0', 'operator', 'restricted', '', ['GPU · 实例 0/1', 'P95 —', '今日 0'], 'err'],
+  ['PDF 文本层提取', 'pdf.text@1.0.0', 'operator', 'public', '', ['CPU · 实例 2/2', 'P95 60ms', '今日 12,406'], 'ok'],
+  ['OFD 解析', 'ofd.parse@1.0.0', 'operator', 'public', '', ['CPU · 实例 2/2', 'P95 85ms', '今日 1,930'], 'ok'],
+  ['案卷拆件', 'archive.dossier-split@0.3.0', 'operator', 'private', '智慧档案室', ['业务方自部署', 'P95 1.2s', '今日 640'], 'ok', '#space'],
+  ['档案解析流水线', 'pipeline.archive-parse@3.1.0', 'pipeline', 'private', '智慧档案室', ['4 个步骤', 'P95 6.4s', '今日 2,046'], 'ok', '#space'],
+  ['扫描件增强流水线', 'pipeline.scan-enhance@1.2.0', 'pipeline', 'public', '', ['3 个步骤', 'P95 420ms', '今日 8,730'], 'ok'],
+  ['通用对话', 'llm.chat@1', 'model', 'restricted', '', ['本地 · qwen-32b', '60 rpm', '今日 2.4M token'], 'ok', '#models'],
+  ['轻量对话', 'llm.chat.lite@1', 'model', 'public', '', ['本地 · qwen-7b', '200 rpm', '今日 0.9M token'], 'ok', '#models'],
+  ['文本向量', 'embed.text@1.0.0', 'model', 'public', '', ['本地 · bge-m3', '—', '今日 64,380'], 'ok', '#models'],
+  ['档案业务规范库', 'kb.archive-spec · prod v7', 'kb', 'restricted', '', ['342 文档', '被 2 个 Agent 依赖', '今日 1,204'], 'ok', '#kb-detail'],
+  ['政策法规库', 'kb.policy · prod v12', 'kb', 'public', '', ['96 文档', '被 1 个 Agent 依赖', '今日 377'], 'ok', '#kb'],
+  ['馆藏文书全文库', 'kb.archive-fulltext · prod v3', 'kb', 'private', '智慧档案室', ['12,880 文档', '强制过滤 2 字段', '今日 5,912'], 'ok', '#space'],
+  ['著录辅助', 'agent.catalog-assist · prod v2', 'agent', 'restricted', '', ['llm.chat@1', '工具 2', '今日 830'], 'ok', '#agents'],
+  ['档案问答助手', 'agent.archive-qa · prod v4', 'agent', 'private', '智慧档案室', ['llm.chat@1', '评测 91.5%', '今日 3,902'], 'ok', '#agent-detail'],
+  ['开放鉴定辅助', 'agent.open-appraisal · 草稿 v1', 'agent', 'private', '智慧档案室', ['llm.chat@1', '政策法规库@v12', '未发布'], 'draft', '#agents'],
+];
+const capF = { type: '', vis: '' };
+function capFilter(a, k, v) {
+  capF[k] = v;
+  a.parentNode.querySelectorAll('a').forEach(x => x.classList.toggle('on', x === a));
+  document.querySelectorAll('.cap[data-type]').forEach(c => { c.style.display = (!capF.type || c.dataset.type === capF.type) && (!capF.vis || c.dataset.vis === capF.vis) ? '' : 'none'; });
+}
+const PLATFORM_NAV = [
+  ['认证', [['users', '身份账号'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
+  ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型']]],
+  ['数据', [['ingest', '数据采集'], ['label', '数据标注']]],
+  ['运维', [['jobs', '任务调度'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['etcd', 'http://localhost:9010']]]]],
+];
+const ARCHIVE_NAV = [
+  ['业务', [['ar-home', '工作台'], ['ar-list', '档案管理', '1,284'], ['ar-import', '档案导入', '2'], ['ar-label', '标注任务', '1'], ['ar-qa', '智能问答']]],
+  ['系统', [['ar-roles', '角色与权限']]],
+];
+const PARENT = { 'op-ocr': 'caps', 'kb-detail': 'kb', 'agent-detail': 'agents', 'ar-detail': 'ar-list',
+  'ar-batch': 'ar-import', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
+// 导入 → 标注 → 回写 跨系统工作流
+const FLOW = [['ar-import', '导入', '智慧档案室'], ['ar-batch', '解析与预抽取', '智慧档案室'], ['ar-send', '送标注', '智慧档案室'],
+  ['label-work', '标注', '中台 · 标注工作台'], ['label-review', '质检回传', '中台 · 标注工作台'], ['ar-writeback', '回写确认', '智慧档案室']];
+const flow = cur => { const n = FLOW.findIndex(f => f[0] === cur);
+  return `<nav class="flow">${FLOW.map(([k, l, s], i) => `<a href="#${k}" class="${i === n ? 'on' : i < n ? 'done' : ''}"><i>${i < n ? '✓' : i + 1}</i><span>${l}<small>${s}</small></span></a>`).join('')}</nav>`; };
+
+function topbar(mark, name, crumb) {
+  return `<header class="top">
+    <a class="brand" href="#portal"><span class="mark">${mark}</span>${name}</a>
+    <div class="crumb">${crumb}</div><span class="sp"></span>
+    <a class="ic" href="#portal">应用</a><a class="ic" href="#jobs">消息 3</a>
+    <span class="ava">张</span></header>`;
+}
+function shell(kind, route, crumb, body) {
+  const nav = kind === 'archive' ? ARCHIVE_NAV : PLATFORM_NAV;
+  const cur = PARENT[route] || route;
+  const side = nav.map(([g, items]) => `<div class="grp"><span>${g}</span>${items.map(([k, l, n, children]) => children
+    ? `<span class="nav">${l}</span>${children.map(([label, href]) => `<a class="nav sub" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`).join('')}`
+    : `<a class="nav ${k === cur ? 'on' : ''}" href="#${k}">${l}${n ? `<i>${n}</i>` : ''}</a>`).join('')}</div>`).join('');
+  const top = kind === 'archive' ? topbar('档', '智慧档案室', crumb) : topbar('KM', '中台控制台', crumb);
+  return `<div class="shell ${kind}">${top}<nav class="side">${side}</nav><main class="main">${body}</main></div>`;
+}
+const ph = (title, sub, actions = '') => `<div class="ph"><h1>${title}</h1>${sub ? `<span class="sub">${sub}</span>` : ''}<span class="sp"></span>${actions}</div>`;
+
+const pages = {
+  login: () => `<div class="center"><form class="login" onsubmit="event.preventDefault();location.hash='portal'">
+      <div class="bar"><span class="mark">KM</span><b style="font-size:15px">统一身份认证</b></div>
+      <div class="seg"><a class="on">账号登录</a><a>扫码登录</a><a>CA 证书</a></div>
+      <input class="inp" id="u" value="admin" aria-label="账号">
+      <input class="inp" id="p" type="password" value="password" aria-label="密码">
+      <button class="btn pri" type="submit">登录</button>
+      <div class="bar note"><span class="sp" style="flex:1"></span><a class="btn ghost">忘记密码</a></div>
+    </form></div>`,
+
+  portal: () => `<div class="portal">${topbar('KM', '统一门户', '<b>应用</b>')}
+    <div class="pbody">
+      <div class="bar"><b style="font-size:15px">admin</b><span class="mu">平台管理员身份 · 上次登录 10-27 09:00</span></div>
+      <div class="apps">
+        ${[['KM', '中台控制台', '用户 · 能力 · 采集 · 调度', '#users'], ['档', '智慧档案室', '著录 · 检索 · 问答', '#ar-home'],
+           ['文', '文书加工系统', '原型未绘制'], ['问', '政策法规问答', '网页版 Agent', '#agent-chat'], ['统', '统建系统', '原型未绘制'], ['库', '库房管理', '原型未绘制'], ['AI', 'kaifang-harness', 'Agent 桌面端 · 下载客户端', '#download']]
+          .map(([m, n, d, h]) => h
+            ? `<a class="app" href="${h}"><span class="mark">${m}</span><div><b>${n}</b><div class="d">${d}</div></div><span class="mu">进入</span></a>`
+            : `<div class="app off"><span class="mark">${m}</span><div><b>${n}</b><div class="d">${d}</div></div></div>`).join('')}
+      </div>
+    </div></div>`,
+
+  users: () => ph('身份账号', '', '<button class="btn pri">新建账号</button>') +
+    card('IAM 身份与控制台成员',
+      T(['全局用户 ID', '登录名', '租户', '邮箱', 'IAM 状态', '控制台角色', '控制台状态', '最近访问', ''], [
+        ['<span class="m">u_8f21c0</span>', '<span class="m">admin</span>', S('系统租户'), 'admin@admin.com', D('启用', 'ok'), '系统租户 / 管理员 · 超级管理员', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
+        ['<span class="m">u_3c90d1e7a2b4f615</span>', '<span class="m">city-admin</span>', S('市档案馆') + ' ' + S('省档案馆', 'ac'), 'city@example.cn', D('启用', 'ok'), '市档案馆 / 租户管理员', D('启用', 'ok'), '<span class="m mu">10-27 10:40</span>', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
+        ['<span class="m">u_a11972bc3d5f804e</span>', '<span class="m">archive-auditor</span>', S('省档案馆'), 'auditor@example.cn', D('启用', 'ok'), '未开通', '未开通', '—', '<a class="btn ghost">编辑</a> <a class="btn ghost">角色</a>'],
+      ]), true),
+
+  tenants: () => ph('租户管理', '', '<button class="btn pri">新建租户</button>') +
+    card('租户', T(['租户名称', '租户 ID', '状态', '创建时间', ''], [
+      ['<b>系统租户</b>', '<span class="m">t_system</span>', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a>'],
+      ['<b>省档案馆</b>', '<span class="m">t_5e2a9c1d7b3f4086</span>', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a>'],
+      ['<b>市档案馆</b>', '<span class="m">t_43f12ac77e108d2b</span>', D('启用', 'ok'), '<span class="m mu">10-27 10:30</span>', '<a class="btn ghost">编辑</a>'],
+    ]), true),
+
+  apps: () => ph('应用接入', '', '<button class="btn">导入 YAML</button><button class="btn pri">注册应用</button>') +
+    card('已接入应用', T(['应用', 'client_id', '鉴权模式', '开通租户', '网关前缀', '实例', '状态', ''], [
+      ['<b>智慧档案室</b>', '<span class="m">kaifang-meta-archive-room</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/archive</span>', '<span class="m">2 / 2</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['文书加工系统', '<span class="m">kaifang-meta-doc-process</span>', S('透传自验'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/doc</span>', '<span class="m">3 / 3</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['统建系统', '<span class="m">kaifang-meta-unified-build</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span> <span class="m mu">+2</span>', '<span class="m">/kaifang-meta/ub</span>', '<span class="m">1 / 2</span>', D('1 实例异常', 'warn'), '<a class="btn ghost">配置</a>'],
+      ['库房管理', '<span class="m">kaifang-meta-warehouse</span>', S('业务自管 · 2025-06 前迁移', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/wh</span>', '<span class="m">2 / 2</span>', D('联调中', ''), '<a class="btn ghost">配置</a>'],
+    ]), true) +
+    `<div class="grid" style="grid-template-columns:repeat(3,1fr)">
+      ${card('智慧档案室 · 接入配置<button class="btn sm">轮换密钥</button>', `<dl class="kv">
+        <dt>client_id</dt><dd class="m">kaifang-meta-archive-room</dd>
+        <dt>鉴权模式</dt><dd>${S('网关托管', 'ac')}</dd>
+        <dt>公开路径</dt><dd class="m">/health, /public/**</dd>
+        <dt>开通租户</dt><dd class="bar">${S('t_5e2a9c1d7b3f4086 · 省档案馆')}</dd>
+        <dt>回调地址</dt><dd class="m">https://archive.internal/callback</dd>
+        <dt>授权方式</dt><dd class="m">authorization_code + PKCE, client_credentials</dd>
+        <dt>上游节点</dt><dd class="m">10.20.3.11:8080, 10.20.3.12:8080</dd>
+        <dt>健康检查</dt><dd class="m">GET /actuator/health · 5s</dd>
+        <dt>密钥</dt><dd class="m mu">client ••3f9a · gateway ••71c2 · event ••0d5e</dd>
+        <dt>SDK</dt><dd>${S('kaifang-meta-spring-boot-starter 1.4.2', 'ac')}</dd></dl>`)}
+      ${card('平台权限<span><a class="btn sm" href="#space">应用空间</a> <button class="btn sm">申请变更</button></span>', `<dl class="kv">
+        <dt>Scopes</dt><dd class="bar">${S('directory:read')}${S('capability:invoke')}${S('annotation:task.write')}${S('events:subscribe')}</dd>
+        <dt>能力点</dt><dd class="bar">${S('archive.import.ocr', 'ac')}${S('archive.import.extract', 'ac')}${S('archive.qa.agent', 'ac')}</dd>
+        <dt>允许调用方</dt><dd class="m">kaifang-meta-doc-process</dd>
+        <dt>限流</dt><dd class="m">每租户 200 QPS</dd>
+        <dt>能力配额</dt><dd>${P(41)}<span class="note">今日 82,140 / 200,000 次</span></dd>
+        <dt>接入自检</dt><dd class="bar">${D('JWKS', 'ok')}${D('网关签名', 'ok')}${D('健康检查', 'ok')}${D('事件投递', 'ok')}${D('能力调用', 'ok')}</dd></dl>`)}
+      ${card('事件订阅', `<dl class="kv">
+        <dt>投递地址</dt><dd class="m">https://archive.internal/kaifang-meta/events</dd>
+        <dt>订阅事件</dt><dd class="bar">${S('user.*')}${S('annotation.task.*')}${S('capability.binding.changed')}</dd>
+        <dt>签名</dt><dd class="m">X-KM-Event-Sign · HMAC-SHA256</dd>
+        <dt>重试</dt><dd class="m">1m · 5m · 30m · 2h · 12h → 死信</dd>
+        <dt>最近投递</dt><dd>${D('成功', 'ok')} <span class="m mu">10-26 11:40 · annotation.task.completed</span></dd>
+        <dt>死信</dt><dd class="m">0</dd></dl>`)}
+    </div>`,
+
+  roles: () => ph('角色与权限', '', '<button class="btn">同步权限清单</button><button class="btn pri">新建角色</button>') +
+    `<div class="grid" style="grid-template-columns:236px 0.8fr 1.45fr">
+      ${card('角色', `<div class="tree">${[['平台超级管理员', 'system', 1, 1], ['租户管理员', 'tenant', 1], ['应用管理员', 'app', 1], ['能力负责人', 'resource', 1],
+          ['审计员', 'tenant', 1], ['标注管理员', 'tenant']]
+        .map(([n, sc, b, on]) => `<a class="${on ? 'on' : ''}" style="display:flex;gap:6px;align-items:center;white-space:nowrap">${n}<span class="sp" style="flex:1"></span><span class="m mu" style="font-size:11px">${sc}</span>${b ? S('内置') : S('自定义', 'ac')}</a>`).join('')}</div>`)}
+      ${card('平台超级管理员 · 菜单与权限点<button class="btn sm pri">保存</button>', [
+        ['应用接入', [['app:view', 1, 1], ['app:tenant-enable', 1, 1], ['app:register', 0]]],
+        ['角色与权限', [['authz:role-manage', 1, 1], ['authz:bind', 1, 1]]],
+        ['能力目录', [['capability:view', 1, 1], ['capability:approve', 0], ['capability:publish', 0]]],
+        ['数据标注', [['annotation:view', 1, 1], ['annotation:manage', 1, 1]]],
+        ['任务调度', [['job:view', 1], ['job:operate', 0]]]]
+        .map(([m, ops], i) => `<div><label class="chk"><input type="checkbox" id="rp${i}" checked><b style="font-weight:500">${m}</b></label>
+          <div class="bar" style="padding-left:24px;flex-wrap:wrap">${ops.map(([o, on, lock], j) => `<label class="chk"><input type="checkbox" id="ro${i}-${j}" ${on ? 'checked' : ''} ${lock ? 'disabled' : ''}><span class="m">${o}</span></label>`).join('')}</div></div>`).join(''))}
+      ${card('成员绑定', T(['全局用户 ID', '姓名', '作用范围', '授予人', '有效期', ''], [
+        ['<span class="m">u_8f21c0</span>', 'admin', '<span class="m">system</span>', '系统初始化', '<span class="m mu">长期</span>', '<a class="btn ghost">移除</a>'],
+      ]) + `<div class="cb"><div class="bar"><button class="btn">添加成员</button></div></div>`, true)}
+    </div>`,
+
+  caps: () => { capF.type = capF.vis = ''; return ph('能力目录', '', '<button class="btn">接入规范</button><button class="btn pri">登记能力</button>') +
+    `<div class="bar"><div class="seg">${[['', '全部'], ...Object.entries(CAP_TYPE)].map(([k, l]) => `<a class="${k ? '' : 'on'}" onclick="capFilter(this,'type','${k}')">${l} ${CAPS.filter(c => !k || c[2] === k).length}</a>`).join('')}</div>
+      <div class="seg">${[['', '全部可见性'], ...Object.entries(CAP_VIS).map(([k, v]) => [k, v[0]])].map(([k, l]) => `<a class="${k ? '' : 'on'}" onclick="capFilter(this,'vis','${k}')">${l}</a>`).join('')}</div>
+      <span class="sp" style="flex:1"></span><input class="inp" id="q-cap" placeholder="搜索能力" style="width:200px"></div>
+    <div class="caps">
+      ${CAPS.map(([n, k, t, v, owner, m, s, h]) => `<a class="cap" data-type="${t}" data-vis="${v}"${h ? ` href="${h}"` : ''}>
+          <div class="t">${n}${s === 'ok' ? D('可用', 'ok') : s === 'warn' ? D('灰度', 'warn') : s === 'draft' ? D('草稿', '') : D('离线', 'err')}</div>
+          <span class="m mu">${k}</span>
+          <div class="bar">${S(CAP_TYPE[t], 'ac')}${S(CAP_VIS[v][0] + (owner ? ' · ' + owner : ''), CAP_VIS[v][1])}</div>
+          <div class="meta">${m.map(x => `<span>${x}</span>`).join('')}</div></a>`).join('')}
+    </div>` +
+    card('能力点绑定<span class="sp" style="flex:1"></span><button class="btn sm">历史版本</button><button class="btn sm pri">新建能力点</button>', T(['能力点', '应用', '契约', '绑定目标', '灰度', '参数 · 策略', '绑定版本', ''], [
+      ['<span class="m">archive.import.ocr</span>', S('智慧档案室', 'ac'), '<span class="m">ocr.general@2</span>', '<a class="lk m" href="#op-ocr">ocr.general@2.3.0</a>', '<span class="m">2.4.0-rc1 · 10%</span>', '<span class="m mu">dpi=300 lang=zh · 30s ×2 · 备用 ocr.lite@1.4.0</span>', '<span class="m">v12</span> ' + D('已发布', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['<span class="m">archive.import.extract</span>', S('智慧档案室', 'ac'), '<span class="m">pipeline.archive-parse@3</span>', '<span class="m">pipeline.archive-parse@3.1.0</span>', '<span class="m mu">—</span>', '<span class="m mu">schema=ws-item · 120s ×1</span>', '<span class="m">v7</span> ' + D('草稿待发布', 'warn'), '<a class="btn ghost">配置</a>'],
+      ['<span class="m">archive.qa.agent</span>', S('智慧档案室', 'ac'), '<span class="m">agent.archive-qa@4</span>', '<span class="m">agent.archive-qa · prod</span>', '<span class="m mu">—</span>', '<span class="m mu">temperature=0.2 · 60s</span>', '<span class="m">v3</span> ' + D('已发布', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['<span class="m">doc.scan.enhance</span>', S('文书加工系统'), '<span class="m">image.denoise@1</span>', '<span class="m">image.denoise@1.1.0</span>', '<span class="m mu">—</span>', '<span class="m mu">level=2 · 10s ×2</span>', '<span class="m">v5</span> ' + D('已发布', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['<span class="m">ub.seal.check</span>', S('统建系统'), '<span class="m">seal.detect@0</span>', '<span class="m">seal.detect@0.9.2</span>', '<span class="m mu">—</span>', '<span class="m mu">租户 t_city02 覆盖：score≥0.8</span>', '<span class="m">v2</span> ' + D('已发布', 'ok'), '<a class="btn ghost">配置</a>'],
+    ]), true); },
+
+  'op-ocr': () => ph('通用 OCR', 'ocr.general', `<select class="inp" id="op-ver"><option>2.3.0（当前）</option><option>2.2.1</option></select><button class="btn">发布新版本</button>`) +
+    `<div class="tabs"><a class="on">概览</a><a>调用记录</a><a>监控</a></div>
+    <div class="grid" style="grid-template-columns:1.1fr 1fr">
+      <div class="grid">
+        ${card('接口', `<dl class="kv"><dt>同步调用</dt><dd class="m">POST /kaifang-meta/platform/capability/v1/bindings/{能力点}/invoke</dd><dt>异步调用</dt><dd class="m">POST …/bindings/{能力点}/runs → capability.run.completed</dd><dt>超时</dt><dd class="m">30s · 重试 2 次</dd></dl>
+<pre class="code">输入  { "file": "minio://raw/2024/WS10/0012/p1.jpg",
+        "lang": "zh", "layout": true }
+输出  { "text": "...", "blocks": [{ "bbox": [x,y,w,h],
+        "text": "...", "score": 0.98 }] }</pre>
+<pre class="code"># 业务代码按能力点调用（推荐）
+km.capability("archive.import.ocr").invoke(file=uri)
+// kaifang-meta-spring-boot-starter
+km.capability("archive.import.ocr").invoke(req, OcrResult.class);
+# 返回 resolved: { binding_version: 12, version: "2.3.0" }</pre>`)}
+        ${card('被以下能力点绑定', T(['能力点', '应用', '绑定版本', '灰度'], [
+          ['<span class="m">archive.import.ocr</span>', '智慧档案室', '<span class="m">2.3.0</span>', '<span class="m">2.4.0-rc1 · 10%</span>'],
+          ['<span class="m">doc.scan.ocr</span>', '文书加工系统', '<span class="m">2.3.0</span>', '<span class="m mu">—</span>'],
+        ]), true)}
+        ${card('版本', `<div class="vl">
+          <div class="vi"><span class="v">2.3.0</span><div class="d"><span>竖排文字准确率提升；镜像 kaifang-meta-operator-ocr-general:2.3.0</span><span class="m">10-12 发布 · 张敏</span></div>${S('当前', 'ac')}</div>
+          <div class="vi"><span class="v">2.2.1</span><div class="d"><span>修复长图截断</span><span class="m">09-03 发布</span></div><button class="btn sm">回滚到此</button></div>
+          <div class="vi"><span class="v">2.1.0</span><div class="d"><span>新增版面结构输出</span><span class="m">07-21 发布</span></div><span class="mu">已下线</span></div></div>`)}
+      </div>
+      <div class="grid">
+        ${card('在线调试<button class="btn sm pri">运行</button>', `<div class="grid" style="grid-template-columns:150px 1fr;gap:12px">
+          <div class="doc" style="padding:12%"><div class="hdr" style="font-size:11px">××省档案局文件</div><div class="rule"></div><div class="tt" style="font-size:8px">关于开展档案数字化质量检查的通知</div>${'<div class="ln" style="height:4px"></div>'.repeat(9)}</div>
+          <pre class="code" style="white-space:pre-wrap">××省档案局文件
+×档发〔2024〕12号
+关于开展档案数字化质量检查的通知
+各市、县（区）档案馆：
+  为进一步规范档案数字化工作……
+
+耗时 382ms · 置信度 0.97 · 版本 2.3.0</pre></div>`)}
+        ${card('实例', T(['实例', '节点', '资源', '健康', '负载'], [
+          ['<span class="m">ocr-general-0</span>', '<span class="m">gpu-node-01</span>', 'GPU 0', D('健康', 'ok'), P(62)],
+          ['<span class="m">ocr-general-1</span>', '<span class="m">gpu-node-02</span>', 'GPU 1', D('健康', 'ok'), P(48)],
+        ]), true)}
+      </div>
+    </div>`,
+
+  space: () => ph('应用空间', '', '<select class="inp"><option>智慧档案室</option><option>文书加工系统</option><option>统建系统</option><option>库房管理</option></select><button class="btn">申请能力</button><button class="btn pri">新建资源</button>') +
+    `    <div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>9</b><span>已授权能力</span></div><div class="stat"><b>4</b><span>能力点</span></div>
+      <div class="stat"><b>5</b><span>私有资源</span></div><div class="stat"><b style="color:var(--warn)">1</b><span>授权审批中</span></div></div>` +
+    card('授权<button class="btn sm">申请能力</button>', T(['能力', '类型', '可见性', '授权范围', '配额', '审批', '状态'], [
+      ['<a class="lk m" href="#op-ocr">ocr.general@2</a>', '算子', S('公共', 'ok'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">20 QPS · 300 万页/月</span>', '<span class="mu">开通即授予</span>', D('已授权', 'ok')],
+      ['<span class="m">pdf.text@1</span> <span class="m mu">· ofd.parse@1</span>', '算子', S('公共', 'ok'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">默认额度</span>', '<span class="mu">开通即授予</span>', D('已授权', 'ok')],
+      ['<span class="m">extract.doc@1</span>', '算子', S('受限', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">10 万次/月</span>', '能力组 · 10-08', D('已授权', 'ok')],
+      ['<span class="m">llm.chat@1</span>', '模型', S('受限', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">500 万 token/月 · 仅本地</span>', 'AI 组 · 09-21', D('已授权', 'ok')],
+      ['<span class="m">embed.text@1</span>', '模型', S('公共', 'ok'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">默认额度</span>', '<span class="mu">开通即授予</span>', D('已授权', 'ok')],
+      ['<a class="lk m" href="#kb-detail">kb.archive-spec</a>', '知识库', S('受限', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">只读检索 · 30 QPS</span>', 'AI 组 · 09-21', D('已授权', 'ok')],
+      ['<span class="m">kb.policy</span>', '知识库', S('公共', 'ok'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">只读检索</span>', '<span class="mu">开通即授予</span>', D('已授权', 'ok')],
+      ['<span class="m">ocr.hand@0</span>', '算子', S('受限', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">申请 5 万页/月</span>', '能力组 · 待审批', D('审批中', 'warn')],
+    ]), true) +
+    card('私有资源', T(['资源', '类型', '线上版本', '依赖（已锁定）', '数据 · 租户 t_5e2a9c1d7b3f4086', '状态'], [
+      ['<a class="lk m" href="#kb-detail">kb.archive-fulltext</a> 馆藏文书全文库', '知识库', S('prod → v3', 'ac'), '<span class="m mu">embed.text@1.0.0</span>', '12,880 文档 · 推送入库<br><span class="note">强制过滤</span> <span class="m">fonds, secret_level</span>', D('可用', 'ok')],
+      ['<a class="lk m" href="#agent-detail">agent.archive-qa</a> 档案问答助手', 'Agent', S('prod → v4', 'ac'), '<span class="m mu">llm.chat@1 · tool.archive-search@v2<br>kb.archive-spec@v7 · kb.archive-fulltext@v3</span>', '会话 3,902 / 今日', D('草稿 v5', 'warn')],
+      ['<a class="lk m" href="#agents">agent.open-appraisal</a> 开放鉴定辅助', 'Agent', S('草稿 v1'), '<span class="m mu">llm.chat@1 · kb.policy@v12</span>', '—', D('未发布', '')],
+      ['<span class="m">pipeline.archive-parse</span> 档案解析流水线', '流水线', S('3.1.0', 'ac'), '<span class="m mu">pdf.text@1 · ofd.parse@1<br>ocr.general@2 · extract.doc@1</span>', '今日运行 2,046', D('可用', 'ok')],
+      ['<span class="m">archive.dossier-split</span> 案卷拆件', '算子', S('0.3.0', 'ac'), '<span class="m mu">登记地址 10.20.3.21:9000</span>', '—', D('可用', 'ok')],
+      ['<span class="m">tool.archive-search</span> 档案检索工具', 'Agent 工具', S('v2', 'ac'), '<span class="m mu">GET /kaifang-meta/archive/api/search</span>', '仅本空间可见', D('可用', 'ok')],
+    ]), true) +
+    `${card('能力点<a class="btn sm" href="#caps">全部绑定</a>', T(['能力点', '绑定目标', '灰度', '类型', '绑定版本'], [
+        ['<span class="m">archive.import.ocr</span>', '<span class="m">ocr.general@2.3.0</span>', '<span class="m">2.4.0-rc1 · 10%</span>', '算子', '<span class="m">v12</span>'],
+        ['<span class="m">archive.import.extract</span>', '<span class="m">pipeline.archive-parse@3.1.0</span>', '<span class="mu">—</span>', '流水线', `<span class="m">v7</span> ${D('草稿', 'warn')}`],
+        ['<span class="m">archive.qa.agent</span>', '<span class="m">agent.archive-qa · prod</span>', '<span class="mu">—</span>', 'Agent', '<span class="m">v3</span>'],
+        ['<span class="m">archive.search.kb</span>', '<span class="m">kb.archive-fulltext · prod</span>', '<span class="mu">—</span>', '知识库', '<span class="m">v2</span>'],
+      ]), true)}
+      ${card('用量 · 本月<button class="btn sm">导出结算</button>', T(['能力', '计量单位', '用量 / 配额', '占用', '超额策略'], [
+        ['<span class="m">ocr.general</span>', '页', '<span class="m">162 万 / 300 万</span>', P(54), '排队'],
+        ['<span class="m">llm.chat</span>', 'token', '<span class="m">310 万 / 500 万</span>', P(62), '降级 llm.chat.lite'],
+        ['<span class="m">extract.doc</span>', '次', '<span class="m">4.1 万 / 10 万</span>', P(41), '拒绝'],
+        ['<span class="m">kb.archive-spec</span>', '次', '<span class="m">1.8 万 / 不限</span>', '<span class="mu">—</span>', '—'],
+        ['<span class="m">GPU 合计</span>', 'GPU 秒', '<span class="m">58,200</span>', '<span class="mu">—</span>', '—'],
+      ]), true)}`,
+
+  kb: () => ph('知识库', '', '<button class="btn pri">新建知识库</button>') +
+    card('全部知识库', T(['名称', '文档', '切片', '线上版本', '草稿', '向量模型', '更新时间'], [
+      ['<a class="lk" href="#kb-detail">档案业务规范库</a>', '342', '18,406', S('prod → v7', 'ac'), S('v8 构建中', 'warn'), '<span class="m">embed.text@1.0.0</span>', '<span class="m mu">10-26 09:02</span>'],
+      ['<a class="lk" href="#kb-detail">馆藏文书全文库</a>', '12,880', '403,117', S('prod → v3', 'ac'), '—', '<span class="m">embed.text@1.0.0</span>', '<span class="m mu">10-20 22:15</span>'],
+      ['<a class="lk" href="#kb-detail">政策法规库</a>', '96', '4,210', S('prod → v12', 'ac'), S('v13 待发布', ''), '<span class="m">embed.text@1.0.0</span>', '<span class="m mu">10-18 14:30</span>'],
+    ]), true),
+
+  'kb-detail': () => ph('档案业务规范库', 'kb.archive-spec', '<button class="btn">检索测试</button><button class="btn">上传文档</button><button class="btn pri">发布 v8</button>') +
+    `<div class="grid" style="grid-template-columns:1.4fr 1fr">
+      ${card('文档 <span class="note">草稿 v8 · 相对 v7 新增 12 · 修改 3</span>', T(['文档', '来源', '切片', '变更', '状态'], [
+        ['归档文件整理规则 DA/T 22-2015.pdf', '上传', '214', '—', D('已索引', 'ok')],
+        ['档案著录规则 DA/T 18.pdf', '上传', '386', S('修改', 'warn'), D('已索引', 'ok')],
+        ['电子档案移交与接收办法.docx', '上传', '128', S('新增', 'ac'), D('切片中', 'warn')],
+        ['馆内借阅管理制度（2024 修订）.pdf', '采集 · MinIO', '96', S('新增', 'ac'), D('排队', '')],
+        ['档案库房温湿度管理要求.pdf', '采集 · MinIO', '41', '—', D('已索引', 'ok')],
+      ]), true)}
+      <div class="grid">
+        ${card('版本', `<div class="vl">
+          <div class="vi"><span class="v">v8</span><div class="d"><span>草稿 · 构建中</span>${P(62)}</div>${S('草稿', 'warn')}</div>
+          <div class="vi"><span class="v">v7</span><div class="d"><span>342 文档 · 切片 512/64 · embed.text@1.0.0</span><span class="m">10-12 发布 · 档案问答助手 v4 引用</span></div>${S('prod', 'ac')}</div>
+          <div class="vi"><span class="v">v6</span><div class="d"><span>330 文档 · 切片 512/64</span><span class="m">09-20 发布</span></div><button class="btn sm">切换为 prod</button></div>
+          <div class="vi"><span class="v">v5</span><div class="d"><span>301 文档 · 切片 384/32</span><span class="m">08-02 发布</span></div><button class="btn sm">切换为 prod</button></div></div>`)}
+        ${card('构建配置', `<dl class="kv"><dt>解析</dt><dd>layout@1.4.1 + ocr.general@2.3.0</dd><dt>切片</dt><dd class="m">512 tokens · 重叠 64</dd><dt>向量</dt><dd class="m">embed.text@1.0.0</dd><dt>构建任务</dt><dd><a class="lk" href="#jobs" style="color:var(--accent)">kb.build · run 8f2c</a></dd></dl>`)}
+      </div>
+    </div>`,
+
+  agents: () => ph('Agent', '', '<button class="btn pri">新建 Agent</button>') +
+    card('全部 Agent', T(['名称', '线上版本', '模型', '知识库', '工具', '评测通过率', '调用方', ''], [
+      ['<a class="lk" href="#agent-detail">档案问答助手</a>', S('prod → v4', 'ac'), '<span class="m">llm.chat@1</span>', '档案业务规范库@v7', '3', '<span class="m">91.5%</span>', '智慧档案室', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+      ['<a class="lk" href="#agent-detail">著录辅助</a>', S('prod → v2', 'ac'), '<span class="m">llm.chat@1</span>', '—', '2', '<span class="m">88.0%</span>', '智慧档案室 · 文书加工', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+      ['<a class="lk" href="#agent-chat">政策法规问答</a>', S('prod → v3', 'ac'), '<span class="m">llm.chat@1</span>', '政策法规库@v12', '0', '<span class="m">93.2%</span>', '网页版', '<a class="btn ghost" href="#agent-chat">打开</a>'],
+      ['<a class="lk" href="#agent-detail">开放鉴定辅助</a>', S('草稿 v1', ''), '<span class="m">llm.chat@1</span>', '政策法规库@v12', '1', '—', '—', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+    ]), true),
+
+  'agent-detail': () => ph('档案问答助手', 'agent.archive-qa · 草稿 v5', '<button class="btn">保存草稿</button><button class="btn">运行评测</button><button class="btn pri">发布 v5</button>') +
+    `<div class="grid" style="grid-template-columns:1fr 1fr 300px">
+      ${card('配置', `<dl class="kv" style="grid-template-columns:72px 1fr">
+        <dt>模型</dt><dd><select class="inp" id="ag-model" style="width:100%"><option>llm.chat@1 · temperature 0.2</option></select></dd>
+        <dt>提示词</dt><dd><textarea class="inp" id="ag-prompt" rows="7" style="width:100%">你是档案业务助手。只依据知识库内容回答，回答末尾列出引用的规范名称。无法确定时说明需要人工确认。</textarea></dd>
+        <dt>知识库</dt><dd class="bar">${S('档案业务规范库 @v7', 'ac')}<a class="btn ghost">更换</a></dd>
+        <dt>工具</dt><dd class="bar">${S('ocr.general@2.3')}${S('extract.doc@1.2')}${S('archive.search（业务系统）')}<a class="btn ghost">添加</a></dd></dl>`)}
+      ${card('调试', `<div class="chat">
+        <div class="msg u">文书档案的保管期限分哪几种？</div>
+        <div class="msg a">分为永久、定期 30 年、定期 10 年三种。<div class="cite">${S('归档文件整理规则 DA/T 22-2015')}</div></div>
+        <div class="step">retrieve kb.archive-spec@v7 · 4 片段 · 1.1s</div></div>
+        <div class="bar"><input class="inp" id="ag-q" placeholder="输入问题" style="flex:1"><button class="btn pri">发送</button></div>`)}
+      ${card('版本', `<div class="vl">
+        <div class="vi"><span class="v">v5</span><div class="d"><span>草稿</span><span>评测未运行</span></div>${S('草稿', 'warn')}</div>
+        <div class="vi"><span class="v">v4</span><div class="d"><span>评测 91.5%</span><span class="m">10-12</span></div>${S('prod', 'ac')}</div>
+        <div class="vi"><span class="v">v3</span><div class="d"><span>评测 87.0%</span><span class="m">09-20</span></div><button class="btn sm">回滚</button></div>
+        <div class="vi"><span class="v">v2</span><div class="d"><span>评测 82.5%</span><span class="m">08-15</span></div><button class="btn sm">回滚</button></div></div>`)}
+    </div>`,
+
+  releases: () => ph('客户端发布', '', '<a class="btn" href="#download">查看下载主页</a><button class="btn pri">新建版本</button>') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b class="m">1.5.0</b><span>stable 当前全量</span></div><div class="stat"><b class="m">1.6.0-beta.2</b><span>beta · 灰度 10%</span></div>
+      <div class="stat"><b class="m">1.3.0</b><span>最低支持版本</span></div><div class="stat"><b>412</b><span>活跃设备 · 7 日</span></div></div>` +
+    card('版本', T(['版本', '渠道', '平台', '灰度', '最低支持', '发布时间', '安装 / 回退', '状态', ''], [
+      ['<span class="m">1.6.0-beta.2</span>', S('beta'), 'Win · macOS · Linux', P(10), '<span class="m">1.3.0</span>', '<span class="m mu">10-25 18:20</span>', '<span class="m">38 / 0</span>', D('灰度', 'warn'), '<button class="btn sm">扩大灰度</button>'],
+      ['<span class="m">1.5.0</span>', S('stable'), 'Win · macOS · Linux', P(100), '<span class="m">1.3.0</span>', '<span class="m mu">10-12 10:05</span>', '<span class="m">356 / 2</span>', D('全量', 'ok'), '<a class="btn ghost">详情</a>'],
+      ['<span class="m">1.4.2</span>', S('stable'), 'Win · macOS', P(100), '<span class="m">1.3.0</span>', '<span class="m mu">09-20 16:40</span>', '<span class="m">—</span>', D('已被替代', ''), '<a class="btn ghost">详情</a>'],
+      ['<span class="m">1.4.1</span>', S('stable'), 'Win · macOS', '—', '—', '<span class="m mu">09-12 09:30</span>', '<span class="m">—</span>', D('已撤回', 'err'), '<a class="btn ghost">原因</a>'],
+    ]), true) +
+    `<div class="grid" style="grid-template-columns:1.4fr 1fr">` +
+    card('安装包 · 1.5.0', T(['平台', '类型', '大小', 'SHA-256', '签名'], [
+      ['<span class="m">windows-x64</span>', '安装包 .exe', '<span class="m">118 MB</span>', '<span class="m mu">9c1e…44a0</span>', D('Authenticode', 'ok')],
+      ['<span class="m">macos-arm64</span>', '安装包 .dmg', '<span class="m">124 MB</span>', '<span class="m mu">51b7…0e2d</span>', D('已公证', 'ok')],
+      ['<span class="m">macos-x64</span>', '安装包 .dmg', '<span class="m">127 MB</span>', '<span class="m mu">e08a…7c19</span>', D('已公证', 'ok')],
+      ['<span class="m">linux-x64</span>', 'AppImage', '<span class="m">131 MB</span>', '<span class="m mu">3fd2…b861</span>', D('更新签名', 'ok')],
+    ]), true) +
+    card('发布策略', `<dl class="kv"><dt>更新检查</dt><dd class="m">GET …/iam/v1/clients/kaifang-harness/releases/latest</dd><dt>灰度规则</dt><dd>hash(设备标识) % 100 &lt; 灰度比例</dd>
+      <dt>租户渠道</dt><dd>t_5e2a9c1d7b3f4086 → stable · 试点单位 → beta</dd><dt>强制更新</dt><dd>低于最低支持版本返回 426，客户端进入强制更新</dd><dt>下载主页</dt><dd class="m">/kaifang-meta/harness/ · 内网公开</dd></dl>`) + `</div>`,
+
+  download: () => `<div class="portal">${topbar('KM', 'kaifang-harness', '<b>下载</b>')}
+    <div class="pbody">
+      <div class="card"><div class="cb" style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:28px">
+        <div style="display:flex;flex-direction:column;gap:8px"><b style="font-size:22px;font-weight:600">kaifang-harness</b><span class="m mu">Agent 桌面端</span>
+          <span class="mu">统一身份登录，Agent 在本机运行，使用平台模型与知识库。会话记录保存在本机。</span>
+          <span class="note">当前版本 1.5.0 · 10-12 发布 · 已识别：macOS（Apple 芯片）</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:stretch"><a class="btn pri" style="justify-content:center;padding:10px 20px">下载 macOS 版（Apple 芯片）</a><span class="note m">124 MB · SHA-256 51b7…0e2d</span></div>
+      </div></div>
+      <div class="grid" style="grid-template-columns:1.2fr 1fr">` +
+      card('全部平台', T(['平台', '安装包', '大小', ''], [
+        ['Windows 10 / 11 · x64', '<span class="m">.exe</span>', '<span class="m">118 MB</span>', '<a class="btn sm">下载</a>'],
+        ['macOS 12+ · Apple 芯片', '<span class="m">.dmg</span>', '<span class="m">124 MB</span>', '<a class="btn sm">下载</a>'],
+        ['macOS 12+ · Intel', '<span class="m">.dmg</span>', '<span class="m">127 MB</span>', '<a class="btn sm">下载</a>'],
+        ['Linux · x64', '<span class="m">AppImage</span>', '<span class="m">131 MB</span>', '<a class="btn sm">下载</a>'],
+      ]), true) +
+      card('版本说明', `<div style="display:flex;flex-direction:column;gap:12px">
+        <div><b class="m">1.5.0</b> <span class="note">10-12</span><div class="mu">知识库检索结果显示来源版本；对话支持拖入本地 PDF；修复长会话滚动卡顿。</div></div>
+        <div><b class="m">1.4.2</b> <span class="note">09-20</span><div class="mu">登录改为系统浏览器；Token 存系统凭据库。</div></div>
+        <a class="btn ghost" style="align-self:flex-start">全部版本历史</a></div>`) + `</div>
+    </div></div>`,
+
+  models: () => ph('模型', '', '<button class="btn pri">接入模型</button>') +
+    card('已接入模型', T(['别名', '提供方', '实际模型', '类型', '限流', '今日 Token', '状态'], [
+      ['<span class="m">llm.chat@1</span>', '本地部署 · vLLM', '<span class="m">qwen-32b-instruct</span>', '对话', '<span class="m">60 rpm</span>', '<span class="m">2,418,330</span>', D('可用', 'ok')],
+      ['<span class="m">llm.chat.lite@1</span>', '本地部署 · vLLM', '<span class="m">qwen-7b-instruct</span>', '对话', '<span class="m">200 rpm</span>', '<span class="m">896,104</span>', D('可用', 'ok')],
+      ['<span class="m">embed.text@1.0.0</span>', '算子节点', '<span class="m">bge-m3</span>', '向量', '—', '<span class="m">—</span>', D('可用', 'ok')],
+    ]), true),
+
+  ingest: () => ph('数据采集', '', '<button class="btn">接入设备</button><button class="btn pri">新建数据源</button>') +
+    `<div class="tabs"><a class="on">数据源</a><a>采集任务</a><a>边缘设备</a></div>` +
+    card('数据源', T(['名称', '类型', '连接', '采集方式', '落地位置', '上次同步', '状态'], [
+      ['旧档案管理系统', S('PostgreSQL'), '<span class="m">10.20.1.40:5432/oldarch</span>', 'CDC 增量', '<span class="m">raw/oldarch/</span>', '<span class="m mu">10-26 09:00</span>', D('正常', 'ok')],
+      ['扫描件归集桶', S('对象存储'), '<span class="m">s3://scan-inbox</span>', '事件触发', '<span class="m">raw/scan/</span>', '<span class="m mu">10-26 09:12</span>', D('正常', 'ok')],
+      ['市馆移交目录', S('FTP'), '<span class="m">ftp://10.30.0.8/transfer</span>', '每日 02:00', '<span class="m">raw/transfer/</span>', '<span class="m mu">10-26 02:00</span>', D('3 文件校验失败', 'warn')],
+      ['政务数据共享接口', S('HTTP API'), '<span class="m">https://share.gov.internal/api</span>', '每小时', '<span class="m">raw/share/</span>', '<span class="m mu">10-26 09:00</span>', D('正常', 'ok')],
+    ]), true) +
+    card('边缘设备', T(['设备', '类型', '位置', '代理', '最近上报', '缓存', '状态'], [
+      ['<span class="m">GP-01</span>', '高拍仪', '数字化加工室', '<span class="m">edge-scan-01</span>', '<span class="m mu">09:14:02</span>', '0', D('在线', 'ok')],
+      ['<span class="m">TH-03</span>', '温湿度传感器', '一号库房 A 区', '<span class="m">edge-store-01</span>', '<span class="m mu">09:15:00</span>', '0', D('在线', 'ok')],
+      ['<span class="m">RF-02</span>', 'RFID 读写器', '一号库房 出入口', '<span class="m">edge-store-01</span>', '<span class="m mu">09:13:47</span>', '0', D('在线', 'ok')],
+      ['<span class="m">TH-07</span>', '温湿度传感器', '二号库房 C 区', '<span class="m">edge-store-02</span>', '<span class="m mu">08:41:10</span>', '212', D('离线 · 本地缓存中', 'err')],
+    ]), true),
+
+  label: () => ph('数据标注', '','<button class="btn">标注模板</button><button class="btn pri">新建工单</button>') +
+    `<div class="bar"><div class="seg"><a class="on">全部 5</a><a>进行中 2</a><a>待质检 1</a><a>待业务确认 0</a><a>已关闭</a></div></div>` +
+    card('标注工单', T(['工单', '来源 · 外部引用', '数据集版本', '模板', '进度', '工单状态', '结果版本', ''], [
+      ['IMP-20241026-03 著录校对', S('智慧档案室', 'ac') + ' <span class="m mu">IMP-20241026-03</span>', '<span class="m">ds.imp-20241026-03@v1</span>', '<span class="m">archive.ws-item@4</span>', P(24), `${D('标注中', 'warn')} <span class="m mu">LABELING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
+      ['IMP-20241025-01 著录校对', S('智慧档案室', 'ac') + ' <span class="m mu">IMP-20241025-01</span>', '<span class="m">ds.imp-20241025-01@v1</span>', '<span class="m">archive.ws-item@4</span>', P(100), `${D('业务已确认', 'ok')} <span class="m mu">DELIVERED</span>`, '<span class="m">v2</span> <span class="note">72 采纳 · 2 拒收</span>', '<a class="btn ghost">详情</a>'],
+      ['印章检测样本', S('中台'), '<span class="m">ds.seal@v1</span>', '目标框选', P(100), `${D('质检中', '')} <span class="m mu">REVIEWING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
+      ['手写体识别训练集', S('中台'), '<span class="m">ds.hand@v1</span>', 'OCR 校对', P(71), `${D('标注中', 'warn')} <span class="m mu">LABELING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
+      ['版面结构样本', S('中台'), '<span class="m">ds.layout@v3</span>', '区域分类', P(100), `${D('已关闭', 'ok')} <span class="m mu">CLOSED</span>`, '<span class="m">v3</span> <span class="note">已导出训练集</span>', '<a class="btn ghost">查看</a>'],
+    ]), true) +
+    `<div class="grid" style="grid-template-columns:1.1fr 1fr">
+      ${card('工单状态 · IMP-20241026-03', `<div class="grid" style="gap:14px">
+        <div class="bar">${[['CREATED', '已创建', 'done'], ['PREPARING', '准备快照', 'done'], ['READY', '待标注', 'done'], ['LABELING', '标注中', 'on'], ['REVIEWING', '质检中'], ['COMPLETED', '已完成'], ['DELIVERED', '业务已确认'], ['CLOSED', '已关闭']]
+          .map(([c, z, k], i) => (i ? '<span class="mu">→</span>' : '') + (k === 'on' ? S(z + ' · ' + c, 'warn') : k === 'done' ? S(z, 'ok') : S(z))).join('')}</div>
+        ${T(['条目状态', '数量', '说明'], [
+          [S('PENDING'), '<span class="m">52</span>', '待标注'],
+          [S('LABELED', 'ac'), '<span class="m">18</span>', '已提交，待抽检'],
+          [S('REJECTED', 'err'), '<span class="m">1</span>', '抽检退回返工'],
+          [S('FLAGGED', 'warn'), '<span class="m">3</span>', '问题件（缺页 / 无法辨认），已推送业务待办'],
+          [S('ACCEPTED', 'ok'), '<span class="m">0</span>', '质检通过'],
+        ])}
+        <dl class="kv"><dt>质检策略</dt><dd class="m">抽检 20% · 合格率 ≥ 98%</dd><dt>截止</dt><dd class="m">10-30 18:00</dd><dt>快照</dt><dd class="m">/t_5e2a9c1d7b3f4086/annotation/at_0c71/ · 保留 180 天</dd><dt>训练回流</dt><dd>${S('允许', 'ok')}</dd></dl></div>`)}
+      ${card('事件与回传', `<dl class="kv">
+        <dt>投递对象</dt><dd class="m">kaifang-meta-archive-room</dd>
+        <dt>拉取接口</dt><dd class="m">GET /annotation/v1/tasks/{id}/results?version=</dd>
+        <dt>回执接口</dt><dd class="m">POST …/results/{ver}/ack</dd>
+        <dt>补偿</dt><dd>SDK 每 10 分钟轮询“标注中”批次</dd></dl>
+        <div style="height:1px;background:var(--line);margin:12px 0"></div>
+        ${T(['时间', '事件', '投递'], [
+          ['<span class="m">10-26 10:02</span>', '<span class="m">annotation.task.accepted</span>', D('成功', 'ok')],
+          ['<span class="m">10-26 10:41</span>', '<span class="m">annotation.item.flagged</span> <span class="m mu">×3</span>', D('成功', 'ok')],
+          ['<span class="m">10-26 11:10</span>', '<span class="m">annotation.task.progress</span> <span class="m mu">20%</span>', D('重试 1 次后成功', 'warn')],
+        ])}`)}
+    </div>` +
+    `<div class="grid" style="grid-template-columns:1.1fr 1fr">
+      ${card('标注模板 · 文书著录要素校对', `<pre class="code">&lt;View&gt;
+  &lt;Image name="page" value="$image"/&gt;
+  &lt;RectangleLabels name="field" toName="page"&gt;
+    &lt;Label value="题名"/&gt; &lt;Label value="文号"/&gt; &lt;Label value="责任者"/&gt;
+    &lt;Label value="成文日期"/&gt; &lt;Label value="密级"/&gt; &lt;Label value="保管期限"/&gt;
+  &lt;/RectangleLabels&gt;
+  &lt;TextArea name="value" toName="page" perRegion="true"/&gt;
+&lt;/View&gt;</pre>`)}
+      ${card('工作台', `<dl class="kv">
+        <dt>画布</dt><dd>Label Studio 编辑器组件 · 前端嵌入</dd>
+        <dt>入口</dt><dd>业务系统打开 <span class="m">/kaifang-meta/console/annotation/workbench/{task_id}</span></dd>
+        <dt>登录</dt><dd>统一认证 SSO 静默登录</dd>
+        <dt>成员</dt><dd>工单指定 · 标注员 2 · 质检员 1</dd>
+        <dt>预标注</dt><dd>predictions 字段带入 extract.doc 结果</dd>
+        <dt>存储</dt><dd class="m">annotation schema</dd></dl>`)}
+    </div>`,
+
+  'label-work': () => ph('IMP-20241026-03 著录校对', '18 / 74', '<button class="btn">跳过</button><button class="btn">上一份</button><button class="btn pri">提交并下一份</button>') + flow('label-work') +
+    `<div class="card bar" style="padding:8px 12px">${[['1', '题名', '#2f7a63'], ['2', '文号', '#7a4fb0'], ['3', '责任者', '#2b61a3'], ['4', '成文日期', '#a8680b'], ['5', '密级', '#b8403a'], ['6', '保管期限', '#5c6b7a']]
+      .map(([k, l, c]) => `<span class="tag" style="background:color-mix(in srgb, ${c} 14%, transparent);color:${c}">${l}<span class="m" style="opacity:.65">${k}</span></span>`).join('')}
+      <span class="sp" style="flex:1"></span><span class="note m">extract.doc@1.2</span></div>` +
+    `<div class="grid" style="grid-template-columns:minmax(0,1fr) 340px">
+      <div class="card" style="padding:16px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--sunk)">
+        <div class="bar" style="align-self:stretch"><div class="seg"><a>原图</a><a>文本层</a><a class="on">叠加</a></div><span class="sp" style="flex:1"></span><span class="note">第 1 / 3 页</span></div>
+        <div class="doc" style="width:460px">
+          <div class="hdr">××省档案局文件</div><div class="no">×档发〔2024〕12号</div><div class="rule"></div>
+          <div class="tt">关于开展档案数字化质量检查的通知</div>
+          ${'<div class="ln"></div>'.repeat(4)}<div class="ln" style="width:70%"></div>${'<div class="ln"></div>'.repeat(3)}<div class="ln" style="width:40%"></div>
+          <div style="text-align:right;font-size:11px;margin-top:auto">××省档案局<br>2024年3月18日</div>
+          <div class="seal"></div>
+          <div class="box" style="--b:#2b61a3;left:9%;top:6%;width:82%;height:8%"><span>责任者</span></div>
+          <div class="box" style="--b:#7a4fb0;left:30%;top:15.5%;width:40%;height:4%"><span>文号</span></div>
+          <div class="box" style="--b:#2f7a63;left:12%;top:24%;width:76%;height:5%"><span>题名</span></div>
+          <div class="box" style="--b:#a8680b;left:62%;top:85%;width:28%;height:5%"><span>成文日期</span></div>
+        </div>
+      </div>
+      ${card('<div class="seg"><a class="on">区域 6</a><a>关系</a><a>历史</a></div><span class="note m">J001-2024-WS30-0012</span>', `
+        ${[['题名', '关于开展档案数字化质量检查的通知', '0.98'], ['文号', '×档发〔2024〕12号', '0.62', '已修改'], ['责任者', '××省档案局', '0.95'], ['成文日期', '2024-03-18', '0.71'], ['密级', '公开', '—', '已补录'], ['保管期限', '定期 30 年', '0.80']]
+          .map(([k, v, c, f], i) => { const low = c === '—' || +c < 0.9;
+            return `<label style="display:flex;flex-direction:column;gap:4px"><span class="bar"><span class="mu">${k}</span>${f ? S(f, 'ac') : ''}<span class="sp" style="flex:1"></span><span class="m" style="color:var(--${low ? 'warn' : 'faint'})">${c}</span></span><input class="inp" id="lf${i}" value="${v}"${low ? ' style="border-color:var(--warn)"' : ''}></label>`; }).join('')}
+        <div class="bar"><span class="sp" style="flex:1"></span><a class="btn sm" href="#label-review">完成并提交质检</a></div>`)}
+    </div>`,
+
+  jobs: () => ph('任务调度', '', '<button class="btn pri">新建定时任务</button>') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>4</b><span>运行中</span></div><div class="stat"><b>128</b><span>今日成功</span></div>
+      <div class="stat"><b style="color:var(--err)">2</b><span>今日失败</span></div><div class="stat"><b>6</b><span>排队</span></div></div>` +
+    card(`<div class="seg"><a class="on">运行记录</a><a>定时计划</a><a>Worker</a></div><input class="inp" id="q-job" placeholder="工作流 / 运行 ID" style="width:200px">`, T(['工作流', '运行 ID', '来源', '触发', '开始', '耗时', '状态', ''], [
+      ['<span class="m">kb.build</span>', '<span class="m">8f2c…a1</span>', '知识库 · 档案业务规范库 v8', '手动', '<span class="m">09:02:11</span>', '<span class="m">12m</span>', D('运行中', 'warn'), '<a class="btn ghost">详情</a>'],
+      ['<span class="m">pipeline.import</span>', '<span class="m">4c7a…e0</span>', '智慧档案室 · IMP-20241026-03', 'API', '<span class="m">09:20:14</span>', '<span class="m">11m</span>', D('成功', 'ok'), '<a class="btn ghost" href="#ar-batch">详情</a>'],
+      ['<span class="m">ingest.cdc</span>', '<span class="m">c07e…5b</span>', '采集 · 旧档案管理系统', '<span class="m">*/5 * * * *</span>', '<span class="m">09:10:00</span>', '<span class="m">38s</span>', D('成功', 'ok'), '<a class="btn ghost">详情</a>'],
+      ['<span class="m">ingest.ftp</span>', '<span class="m">5a11…c3</span>', '采集 · 市馆移交目录', '<span class="m">0 2 * * *</span>', '<span class="m">02:00:00</span>', '<span class="m">6m</span>', D('部分失败', 'err'), '<button class="btn sm">重试</button>'],
+      ['<span class="m">env.summary</span>', '<span class="m">9b4e…2d</span>', '采集 · 库房温湿度日报', '<span class="m">0 0 * * *</span>', '<span class="m">00:00:00</span>', '<span class="m">9s</span>', D('成功', 'ok'), '<a class="btn ghost">详情</a>'],
+    ]), true),
+
+  'label-review': () => ph('质检与回传', 'IMP-20241026-03 著录校对', '<button class="btn">退回返工</button><a class="btn pri" href="#ar-writeback">质检通过并回传</a>') + flow('label-review') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>74 / 74</b><span>已标注</span></div><div class="stat"><b>15</b><span>抽检份数 · 20%</span></div>
+      <div class="stat"><b>93.3%</b><span>抽检通过率</span></div><div class="stat"><b style="color:var(--err)">1</b><span>退回返工</span></div></div>
+    <div class="grid" style="grid-template-columns:1.6fr 1fr">
+      ${card('抽检记录', T(['档号', '字段', '预标注', '标注结果', '质检'], [
+        ['<span class="m">J001-2024-WS30-0012</span>', '文号', '<del>×档发〔2024〕2号</del>', '<ins>×档发〔2024〕12号</ins>', D('通过', 'ok')],
+        ['<span class="m">J001-2024-WS30-0012</span>', '密级', '<span class="mu">未识别</span>', '<ins>公开</ins>', D('通过', 'ok')],
+        ['<span class="m">J001-2024-WS30-0014</span>', '成文日期', '<del>2024-05-08</del>', '<ins>2024-05-06</ins>', D('通过', 'ok')],
+        ['<span class="m">J001-2024-WS30-0016</span>', '责任者', '<del>××档案服务有限公司</del>', '<ins>××数字档案服务公司</ins>', D('返工 · 应为发文机关', 'err')],
+        ['<span class="m">J001-2024-WS30-0016</span>', '保管期限', '<del>定期 10 年</del>', '<ins>定期 30 年</ins>', D('通过', 'ok')],
+      ]), true)}
+      ${card('回传', `<dl class="kv">
+        <dt>目标系统</dt><dd>智慧档案室 <span class="m mu">kaifang-meta-archive-room</span></dd>
+        <dt>方式</dt><dd>事件 <span class="m">annotation.task.completed</span>，档案室按批次拉取结果</dd>
+        <dt>结果版本</dt><dd class="m">ds.imp-20241026-03@v2</dd>
+        <dt>训练回流</dt><dd><label class="chk" style="padding:0"><input type="checkbox" id="rv-train" checked>加入 extract.doc 训练集</label></dd></dl>
+        <div class="vl">
+          <div class="vi" style="grid-template-columns:88px 1fr"><span class="m mu">10-26 09:31</span><span>档案室创建任务 · 74 份</span></div>
+          <div class="vi" style="grid-template-columns:88px 1fr"><span class="m mu">10-27 16:05</span><span>标注完成 · 1 份返工中</span></div>
+          <div class="vi" style="grid-template-columns:88px 1fr"><span class="m mu">待执行</span><span>质检通过后回传，档案室进入回写确认</span></div></div>`)}
+    </div>`,
+
+  /* 智慧档案室 */
+  'ar-import': () => ph('档案导入', '', '<button class="btn">导入规则</button>') + flow('ar-import') +
+    `<div class="grid" style="grid-template-columns:1fr 1.6fr">
+      ${card('新建导入', `<div class="drop"><b>拖入文件或文件夹</b><span class="note">PDF · OFD</span><button class="btn">选择文件</button></div>
+        <dl class="kv" style="grid-template-columns:56px 1fr">
+          <dt>全宗</dt><dd><select class="inp" id="im-qz" style="width:100%"><option>J001 ××省档案馆</option></select></dd>
+          <dt>门类</dt><dd><select class="inp" id="im-ml" style="width:100%"><option>文书档案</option></select></dd>
+          <dt>档号</dt><dd><select class="inp" id="im-dh" style="width:100%"><option>从文件名解析</option><option>按档号规则生成</option></select></dd></dl>
+        <label class="chk"><input type="checkbox" id="im-x" checked>导入后自动预抽取著录项</label>
+        <div class="chk"><input type="checkbox" id="im-y" checked><label for="im-y">置信度低于</label><input class="inp m" id="im-th" value="0.90" style="width:58px;padding:2px 6px" aria-label="置信度阈值"><span>的档案待送标注</span></div>
+        <a class="btn pri" href="#ar-batch" style="justify-content:center">开始导入</a>`)}
+      ${card('导入批次', T(['批次', '份数', '格式', '页数', '状态', '创建时间'], [
+        ['<a class="lk m" href="#ar-batch">IMP-20241026-03</a>', '<span class="m">312</span>', '双层 PDF 268 · OFD 44', '<span class="m">2,046</span>', S('标注中', 'warn'), '<span class="m mu">10-26 09:20</span>'],
+        ['<a class="lk m" href="#ar-writeback">IMP-20241025-01</a>', '<span class="m">86</span>', 'OFD 86', '<span class="m">530</span>', S('回写待确认', 'ac'), '<span class="m mu">10-25 14:02</span>'],
+        ['<span class="m">IMP-20241020-02</span>', '<span class="m">140</span>', '双层 PDF 140', '<span class="m">912</span>', S('已完成', 'ok'), '<span class="m mu">10-20 10:47</span>'],
+        ['<span class="m">IMP-20241018-01</span>', '<span class="m">57</span>', '双层 PDF 57', '<span class="m">388</span>', S('3 份解析失败', 'err'), '<span class="m mu">10-18 16:30</span>'],
+      ]), true)}
+    </div>`,
+
+  'ar-batch': () => ph('IMP-20241026-03', '312 份 · 2,046 页', '<button class="btn">导出报告</button><a class="btn pri" href="#ar-send">送标注 74 份</a>') + flow('ar-batch') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>291</b><span>文本层直接提取</span></div><div class="stat"><b>21</b><span>OCR 补识别 · 无文本层或乱码</span></div>
+      <div class="stat"><b style="color:var(--ok)">238</b><span>自动通过 · 置信度 ≥ 0.90</span></div><div class="stat"><b style="color:var(--warn)">74</b><span>待送标注</span></div></div>
+    <div class="grid" style="grid-template-columns:1.7fr 1fr">
+      ${card('<div class="seg"><a class="on">全部 312</a><a>待送标注 74</a><a>自动通过 238</a></div><input class="inp" id="q-bf" placeholder="档号 / 题名" style="width:180px">', T(['文件', '文本来源', '题名（预抽取）', '最低置信度', '分流'], [
+        ['<span class="m">J001-2024-WS30-0012.ofd</span>', 'OFD 文本层', '关于开展档案数字化质量检查的通知', '<span class="m" style="color:var(--warn)">0.62</span>', S('送标注', 'warn')],
+        ['<span class="m">J001-2024-WS30-0013.pdf</span>', 'PDF 文本层', '2024 年上半年档案接收计划', '<span class="m">0.94</span>', S('自动通过', 'ok')],
+        ['<span class="m">J001-2024-WS30-0014.pdf</span>', 'OCR · 第 3–5 页无文本层', '关于印发档案开放审核办法的通知', '<span class="m" style="color:var(--warn)">0.71</span>', S('送标注', 'warn')],
+        ['<span class="m">J001-2024-WS30-0015.ofd</span>', 'OFD 文本层', '关于做好库房防汛工作的通知', '<span class="m">0.97</span>', S('自动通过', 'ok')],
+        ['<span class="m">J001-2024-WS30-0016.pdf</span>', 'OCR · 文本层乱码', '档案数字化外包服务合同', '<span class="m" style="color:var(--warn)">0.58</span>', S('送标注', 'warn')],
+        ['<span class="m">J001-2024-WS30-0017.pdf</span>', 'PDF 文本层', '2024 年档案业务培训通知', '<span class="m">0.93</span>', S('自动通过', 'ok')],
+      ]), true)}
+      ${card('处理流水线 <a class="btn ghost m" href="#jobs">pipeline.import · 4c7a</a>', `<div class="vl">
+        ${[['格式识别', '312 份 · 双层 PDF 268 · OFD 44'], ['文本层提取', 'pdf.text@1.0 · ofd.parse@1.0 · 291 份'], ['文本层质检', '乱码、缺页检测 · 21 份转 OCR'],
+           ['OCR 补识别', 'ocr.general@2.3 · 21 份 · 133 页'], ['要素抽取', 'extract.doc@1.2 · 312 份'], ['置信度分流', '阈值 0.90 · 通过 238 · 送标 74']]
+          .map(([t, d]) => `<div class="vi" style="grid-template-columns:1fr auto"><div class="d"><b style="color:var(--fg);font-weight:500">${t}</b><span>${d}</span></div>${D('完成', 'ok')}</div>`).join('')}</div>`)}
+    </div>`,
+
+  'ar-send': () => ph('送标注', 'IMP-20241026-03 → 中台 · 数据标注', '<a class="btn" href="#ar-batch">返回批次</a><a class="btn pri" href="#ar-label">确认送标注</a>') + flow('ar-send') +
+    `<div class="grid" style="grid-template-columns:1.2fr 1fr">
+      ${card('标注要求', `<dl class="kv">
+        <dt>模板</dt><dd><select class="inp" id="sd-tpl" style="width:100%"><option>文书著录要素校对</option></select></dd>
+        <dt>范围</dt><dd><div class="seg"><a class="on">仅低置信度 74 份</a><a>全部 312 份</a><a>抽检 10%</a></div></dd>
+        <dt>字段</dt><dd class="bar">${['题名', '文号', '责任者', '成文日期', '密级', '保管期限'].map((f, i) => `<label class="chk"><input type="checkbox" id="sd-f${i}" checked>${f}</label>`).join('')}</dd>
+        <dt>预标注</dt><dd>带入预抽取结果与逐字段置信度，标注员只需确认或修改</dd>
+        <dt>标注员</dt><dd class="bar">${S('李卫东')}${S('陈立')}<button class="btn sm">添加</button></dd>
+        <dt>质检员</dt><dd class="bar">${S('张敏')}<button class="btn sm">添加</button></dd>
+        <dt>质检</dt><dd>抽检 20% · 不通过退回原标注员</dd>
+        <dt>截止</dt><dd><input class="inp m" id="sd-due" value="2024-10-30"></dd></dl>`)}
+      ${card('发送内容', `<dl class="kv">
+        <dt>数据集</dt><dd><span class="m">ds.imp-20241026-03@v1</span> · 只读快照</dd>
+        <dt>内容</dt><dd>74 份 · 412 页 · 页面图像、文本层坐标、预抽取结果</dd>
+        <dt>档案状态</dt><dd>${S('标注中 · 著录项只读', 'warn')}</dd>
+        <dt>回传</dt><dd>质检通过后推送事件，进入回写确认</dd>
+        <dt>幂等键</dt><dd class="m">批次号 + 档号</dd></dl>
+<pre class="code">// kaifang-meta-spring-boot-starter
+annotationClient.createTask(CreateTaskReq.builder()
+    .template("archive.catalog")
+    .dataset(snapshot(batch, lowConfidence))
+    .annotators("u_3301", "u_3303").reviewers("u_8f21c0")
+    .callback("annotation.task.completed")
+    .build());</pre>`)}
+    </div>`,
+
+  'ar-label': () => ph('标注任务', '') +
+    card('<div class="seg"><a class="on">我参与的 2</a><a>本系统全部 3</a></div>', T(['工单', '模板', '我的角色', '进度', '状态', '截止', ''], [
+      ['IMP-20241026-03 著录校对', '文书著录要素校对', S('标注员', 'ac'), P(24), D('标注中', 'warn'), '<span class="m mu">10-30 18:00</span>', '<a class="btn sm pri" href="#label-work">进入标注</a>'],
+      ['IMP-20241026-03 著录校对', '文书著录要素校对', S('质检员', 'ac'), P(24), D('标注中', 'warn'), '<span class="m mu">10-30 18:00</span>', '<a class="btn sm" href="#label-review">质检</a>'],
+      ['IMP-20241025-01 著录校对', '文书著录要素校对', '<span class="mu">—</span>', P(100), D('待回写确认', 'ok'), '<span class="m mu">10-28 18:00</span>', '<a class="btn ghost" href="#ar-writeback">回写确认</a>'],
+    ]), true),
+
+  'ar-writeback': () => ph('回写确认', 'IMP-20241026-03 · 标注结果 v2', '<button class="btn">导出差异</button><a class="btn pri" href="#ar-list">采纳并回写 74 份</a>') + flow('ar-writeback') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>52</b><span>份有修改</span></div><div class="stat"><b>22</b><span>份与预抽取一致</span></div>
+      <div class="stat"><b>112</b><span>字段变更</span></div><div class="stat"><b style="color:var(--ok)">0</b><span>冲突</span></div></div>` +
+    card('<div class="seg"><a class="on">全部变更 112</a><a>仅冲突 0</a></div>',
+      T(['档号', '题名', '字段', '原值', '标注值', '处理'], [
+        ['J001-2024-WS30-0012', '关于开展档案数字化质量检查的通知', '文号', '<del>×档发〔2024〕2号</del>', '<ins>×档发〔2024〕12号</ins>'],
+        ['J001-2024-WS30-0012', '关于开展档案数字化质量检查的通知', '密级', '<span class="mu">空</span>', '<ins>公开</ins>'],
+        ['J001-2024-WS30-0014', '关于印发档案开放审核办法的通知', '成文日期', '<del>2024-05-08</del>', '<ins>2024-05-06</ins>'],
+        ['J001-2024-WS30-0016', '档案数字化外包服务合同', '责任者', '<del>××档案服务有限公司</del>', '<ins>××省档案馆</ins>'],
+        ['J001-2024-WS30-0016', '档案数字化外包服务合同', '保管期限', '<del>定期 10 年</del>', '<ins>定期 30 年</ins>'],
+      ].map((r, i) => [`<a class="lk m" href="#ar-detail">${r[0]}</a>`, ...r.slice(1), `<select class="inp" id="wb${i}"><option>采纳标注值</option><option>保留原值</option></select>`])), true),
+
+  'ar-home': () => ph('工作台', '', '<button class="btn pri">新建著录</button>') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>23</b><span>待著录</span></div><div class="stat"><b>5</b><span>待鉴定</span></div>
+      <div class="stat"><b>3</b><span>借阅待审批</span></div><div class="stat"><b>1,284</b><span>本年度归档</span></div></div>
+    <div class="grid" style="grid-template-columns:1.5fr 1fr">
+      ${card('最近处理<a class="btn ghost" href="#ar-list">全部</a>', T(['档号', '题名', '状态', '时间'], [
+        ['<a class="lk m" href="#ar-detail">J001-2024-WS30-0012</a>', '关于开展档案数字化质量检查的通知', S('标注中', 'warn'), '<span class="m mu">09:14</span>'],
+        ['<span class="m">J001-2024-WS30-0011</span>', '2024 年度档案工作要点', S('已著录', 'ok'), '<span class="m mu">昨天</span>'],
+        ['<span class="m">J001-2024-WS10-0087</span>', '关于馆藏档案开放审核工作的请示', S('OCR 中', ''), '<span class="m mu">昨天</span>'],
+      ]), true)}
+      ${card('库房环境', T(['库房', '温度', '湿度', ''], [
+        ['一号库房 A 区', '<span class="m">18.6 ℃</span>', '<span class="m">47 %</span>', D('正常', 'ok')],
+        ['一号库房 B 区', '<span class="m">19.1 ℃</span>', '<span class="m">52 %</span>', D('正常', 'ok')],
+        ['二号库房 C 区', '<span class="m">—</span>', '<span class="m">—</span>', D('传感器离线', 'err')],
+      ]), true)}
+    </div>`,
+
+  'ar-list': () => ph('档案管理', '文书档案', '<button class="btn">批量 OCR</button><button class="btn">导出目录</button><button class="btn pri">新建著录</button>') +
+    `<div class="bar"><select class="inp" id="f-qz"><option>全宗 J001</option></select><select class="inp" id="f-nd"><option>年度 2024</option></select><select class="inp" id="f-qx"><option>全部保管期限</option><option>永久</option><option>定期 30 年</option><option>定期 10 年</option></select><input class="inp" id="f-kw" placeholder="档号 / 题名 / 责任者" style="width:240px"><button class="btn">检索</button></div>` +
+    card('<span>共 1,284 件</span><div class="seg"><a class="on">按件</a><a>按卷</a></div>', T(['档号', '题名', '责任者', '成文日期', '保管期限', '密级', '页数', '状态'], [
+      ['<a class="lk m" href="#ar-detail">J001-2024-WS30-0012</a>', '关于开展档案数字化质量检查的通知', '××省档案局', '<span class="m">2024-03-18</span>', '定期 30 年', '公开', '<span class="m">3</span>', S('标注中 · 只读', 'warn')],
+      ['<span class="m">J001-2024-WS30-0011</span>', '2024 年度档案工作要点', '××省档案局', '<span class="m">2024-02-26</span>', '定期 30 年', '公开', '<span class="m">8</span>', S('已著录', 'ok')],
+      ['<span class="m">J001-2024-WY-0004</span>', '关于馆藏档案开放审核工作的请示', '档案保管利用处', '<span class="m">2024-02-20</span>', '永久', '内部', '<span class="m">5</span>', S('OCR 中', '')],
+      ['<span class="m">J001-2024-WS10-0087</span>', '关于 2024 年春节值班安排的通知', '办公室', '<span class="m">2024-02-01</span>', '定期 10 年', '公开', '<span class="m">2</span>', S('已著录', 'ok')],
+      ['<span class="m">J001-2024-WY-0003</span>', '档案馆新馆库房搬迁方案', '档案保管利用处', '<span class="m">2024-01-15</span>', '永久', '内部', '<span class="m">22</span>', S('已著录', 'ok')],
+      ['<span class="m">J001-2024-WS30-0010</span>', '关于做好电子档案移交工作的通知', '××省档案局', '<span class="m">2024-01-09</span>', '定期 30 年', '公开', '<span class="m">4</span>', S('已著录', 'ok')],
+    ]), true),
+
+  'ar-detail': () => ph('J001-2024-WS30-0012', '文书档案 · 件', '<button class="btn">重新识别</button><button class="btn">退回</button><button class="btn pri">确认著录</button>') +
+    `<div class="grid" style="grid-template-columns:minmax(0,1fr) 380px">
+      <div class="card" style="padding:20px;display:grid;grid-template-columns:72px 1fr;gap:16px;background:var(--sunk)">
+        <div style="display:flex;flex-direction:column;gap:8px">${[1, 2, 3].map(i => `<div class="doc" style="padding:10%;gap:6%;outline:${i === 1 ? '2px solid var(--accent)' : '0'}">${'<div class="ln" style="height:3px"></div>'.repeat(6)}</div>`).join('')}</div>
+        <div class="doc" style="width:440px;justify-self:center">
+          <div class="hdr">××省档案局文件</div><div class="no">×档发〔2024〕12号</div><div class="rule"></div>
+          <div class="tt">关于开展档案数字化质量检查的通知</div>
+          ${'<div class="ln"></div>'.repeat(5)}<div class="ln" style="width:60%"></div>${'<div class="ln"></div>'.repeat(3)}
+          <div style="text-align:right;font-size:11px;margin-top:auto">××省档案局<br>2024年3月18日</div><div class="seal"></div>
+        </div>
+      </div>
+      <div class="grid">
+        ${card('著录项', `
+          ${[['档号', 'J001-2024-WS30-0012', ''], ['题名', '关于开展档案数字化质量检查的通知', 'AI'], ['文号', '×档发〔2024〕12号', 'AI'], ['责任者', '××省档案局', 'AI'], ['成文日期', '2024-03-18', 'AI'], ['保管期限', '定期 30 年', ''], ['密级', '公开', ''], ['页数', '3', '']]
+            .map(([k, v, f], i) => `<label style="display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:center"><span class="mu">${k}</span><span class="bar" style="flex-wrap:nowrap"><input class="inp" id="ar${i}" value="${v}" style="flex:1">${f ? S('AI', 'ac') : ''}</span></label>`).join('')}`)}
+        ${card('全文 <span class="note">OCR 置信度 0.97</span>', `<div class="note" style="line-height:1.8;color:var(--fg)">各市、县（区）档案馆：为进一步规范档案数字化工作，提升数字化成果质量，决定于 2024 年 4 月至 6 月开展档案数字化质量检查……</div>`)}
+      </div>
+    </div>`,
+
+  'ar-qa': () => ph('智能问答', '档案问答助手 v4', '<button class="btn">新对话</button>') +
+    `<div class="card" style="display:grid;grid-template-columns:220px 1fr;min-height:520px">
+      <div style="border-right:1px solid var(--line);padding:12px 8px" class="tree">
+        <a class="on">文书档案保管期限</a><a>电子档案移交流程</a><a>借阅审批时限</a><a>库房温湿度标准</a></div>
+      <div style="display:flex;flex-direction:column;padding:20px 24px;gap:16px">
+        <div class="chat" style="flex:1">
+          <div class="msg u">文书档案的保管期限分哪几种？</div>
+          <div class="msg a">文书档案的保管期限分为永久、定期 30 年、定期 10 年三种。本馆 2024 年度已归档的 1,284 件中，永久 212 件，定期 30 年 803 件，定期 10 年 269 件。
+            <div class="cite">${S('归档文件整理规则 DA/T 22-2015')}${S('工具 · archive.search', 'ac')}</div></div>
+          <div class="msg u">定期 10 年的有哪些到期需要鉴定？</div>
+          <div class="msg a">2014 年归档、保管期限为定期 10 年的文件共 46 件，已于今年到期，建议发起到期鉴定。
+            <div class="cite">${S('工具 · archive.search', 'ac')}<a class="btn sm" href="#ar-list">查看 46 件</a></div></div>
+        </div>
+        <div class="bar"><input class="inp" id="qa-in" placeholder="询问档案业务或馆藏情况" style="flex:1;padding:9px 12px"><button class="btn pri">发送</button></div>
+      </div>
+    </div>`,
+
+  'agent-chat': () => `<div class="card" style="display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 96px)">
+      <div style="border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn pri">新对话</button>
+        <div class="tree"><a class="on">开放鉴定的法定期限</a><a>涉密档案降密程序</a><a>电子档案长期保存格式</a></div>
+      </div>
+      <div style="display:flex;flex-direction:column;padding:20px 24px;gap:16px">
+        <div class="bar"><b style="font-size:15px">政策法规问答</b>${S('prod v3', 'ac')}<span class="m mu">llm.chat@1 · kb.policy@v12</span></div>
+        <div class="chat" style="flex:1">
+          <div class="msg u">档案开放鉴定的法定期限是多少？到期没鉴定怎么办？</div>
+          <div class="step">检索 kb.policy · 6 条 → 重排 3 条 → 生成</div>
+          <div class="msg a">档案一般应自形成之日起满 25 年向社会开放；经济、教育、科技、文化等类档案可以少于 25 年，涉及国家安全或重大利益等的可以多于 25 年。到期前应组织开放审核，未完成审核的不得开放，并应记录延期原因。
+            <div class="cite">${S('档案法 第二十七条')}${S('档案开放审核办法 第八条')}${S('档案开放审核办法 第十二条')}</div></div>
+        </div>
+        <div class="bar"><input class="inp" id="ac-in" placeholder="询问档案政策法规" style="flex:1;padding:9px 12px"><button class="btn pri">发送</button></div>
+      </div>
+    </div>`,
+
+  'ar-roles': () => ph('角色与权限', '', '<button class="btn pri">新建角色</button>') +
+    `<div class="grid" style="grid-template-columns:240px 1fr 1fr">
+      ${card('角色', `<div class="tree"><a class="on">档案管理员</a><a>著录员</a><a>利用者</a><a>审计员</a></div>`)}
+      ${card('菜单与操作权限<button class="btn sm pri">保存</button>', [
+        ['工作台', [], true], ['档案管理', ['查看', '著录', '批量 OCR', '导出目录', '删除'], true], ['智能问答', [], true],
+        ['借阅', ['申请', '审批'], true], ['角色与权限', [], false]]
+        .map(([m, ops, on], i) => `<div><label class="chk"><input type="checkbox" id="pm${i}" ${on ? 'checked' : ''}><b style="font-weight:500">${m}</b></label>
+          ${ops.length ? `<div class="bar" style="padding-left:24px">${ops.map((o, j) => `<label class="chk"><input type="checkbox" id="po${i}-${j}" ${o !== '删除' ? 'checked' : ''}>${o}</label>`).join('')}</div>` : ''}</div>`).join(''))}
+      ${card('成员', T(['全局用户 ID', '姓名', '本系统组织', ''], [
+        ['<span class="m">u_8f21c0</span>', '张敏', '档案保管利用处', '<a class="btn ghost">移除</a>'],
+        ['<span class="m">u_3301</span>', '李卫东', '保管科', '<a class="btn ghost">移除</a>'],
+        ['<span class="m">u_3303</span>', '陈立', '保管科', '<a class="btn ghost">移除</a>'],
+      ]) + `<div class="cb"><button class="btn">添加成员</button></div>`, true)}
+    </div>`,
+};
+
+const CRUMB = {
+  users: '认证 / <b>身份账号</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
+  kb: '能力 / <b>知识库</b>', 'kb-detail': '能力 / 知识库 / <b>档案业务规范库</b>', agents: '能力 / <b>Agent</b>', 'agent-detail': '能力 / Agent / <b>档案问答助手</b>',
+  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>数据标注</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
+  'ar-home': '<b>工作台</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',
+  'ar-import': '<b>档案导入</b>', 'ar-batch': '档案导入 / <b>IMP-20241026-03</b>', 'ar-send': '档案导入 / IMP-20241026-03 / <b>送标注</b>', 'ar-writeback': '档案导入 / IMP-20241026-03 / <b>回写确认</b>', 'ar-label': '<b>标注任务</b>', 'ar-roles': '系统 / <b>角色与权限</b>',
+};
+
+function render() {
+  const r = location.hash.slice(1);
+  const route = pages[r] ? r : 'login';
+  const html = pages[route]();
+  const el = document.getElementById('app');
+  if (['login', 'portal', 'download'].includes(route)) el.innerHTML = html;
+  else if (route === 'agent-chat') el.innerHTML = `<div class="shell wb">${topbar('KM', 'Agent', CRUMB[route])}<main class="main">${html}</main></div>`;
+  else if (route.startsWith('label-')) el.innerHTML = `<div class="shell wb">${topbar('KM', '标注工作台', CRUMB[route])}<main class="main">${html}</main></div>`;
+  else el.innerHTML = shell(route.startsWith('ar-') ? 'archive' : 'platform', route, CRUMB[route], html);
+  el.scrollTop = 0;
+}
+addEventListener('hashchange', render);
+render();
+</script>

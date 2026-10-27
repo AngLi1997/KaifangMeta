@@ -1,0 +1,240 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0}</style>
+<title>中台系统架构</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&display=swap">
+<style>
+/* layout: 上 接入端 → 中 [独立进程 | 网关 + 平台 | 业务系统] → 下 基础设施；灰色底带 + 虚线框 + 彩色功能块 + 带标注的箭头 */
+:root {
+  --bg: #ffffff;
+  --fg: #1d1d1f;
+  --muted: #5f6368;
+  --band: #f2f2f2;          /* 浅灰底带：接入端、网关、基础设施 */
+  --block: #a6a6a6;         /* 深灰底带：平台模块分组 */
+  --on-block: #1d1d1f;
+  --dash: #3a3a3a;          /* 虚线框 */
+  --outline: #b9b9b9;       /* 外层虚线容器 */
+  --yellow: #fde8a6;        /* 平台模块功能 */
+  --pink: #fbd2d8;          /* AI 能力 / 跨模块机制 */
+  --purple: #e5e3fb;        /* 独立进程 */
+  --white: #ffffff;
+  --side: #6e6e6e;          /* 右侧业务系统深色列 */
+  --side-box: #ffffff;
+  --side-fg: #1d1d1f;
+  --sage: #b4bdb0;          /* 平台基础设施 */
+  --sage-soft: #e3e7e0;     /* 运维组件 */
+  --arrow: #1d1d1f;
+  --red: #e57373;
+  --red-edge: #b94a4a;
+  --icon: #3b82f6;
+  --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121417; --fg: #e6e8eb; --muted: #9aa1ab; --band: #1c1f23; --block: #2e3238; --on-block: #e6e8eb; --dash: #aab1ba; --outline: #4a5059;
+    --yellow: #4a3f1d; --pink: #4b2a31; --purple: #2f2c4e; --white: #23272d; --side: #2a2e34; --side-box: #3a3f46; --side-fg: #e6e8eb;
+    --sage: #3a463d; --sage-soft: #242a26; --arrow: #d5d9de; --red: #d46d6d; --red-edge: #a24747; --icon: #6ea6e0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121417; --fg: #e6e8eb; --muted: #9aa1ab; --band: #1c1f23; --block: #2e3238; --on-block: #e6e8eb; --dash: #aab1ba; --outline: #4a5059;
+  --yellow: #4a3f1d; --pink: #4b2a31; --purple: #2f2c4e; --white: #23272d; --side: #2a2e34; --side-box: #3a3f46; --side-fg: #e6e8eb;
+  --sage: #3a463d; --sage-soft: #242a26; --arrow: #d5d9de; --red: #d46d6d; --red-edge: #a24747; --icon: #6ea6e0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 13px;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.scroll { overflow-x: auto; }
+.arch { min-width: 1440px; max-width: 1560px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* 底带与竖排标题 */
+.band { background: var(--band); display: grid; grid-template-columns: 56px 1fr; align-items: center; gap: 16px; padding: 18px 24px; }
+.vt { writing-mode: vertical-rl; letter-spacing: .3em; font-weight: 700; font-size: 20px; justify-self: center; }
+
+/* 虚线框 */
+.dbox { border: 2px dashed var(--dash); border-radius: 4px; padding: 10px 12px; text-align: center; line-height: 1.6; min-width: 0; overflow-wrap: anywhere; color: var(--fg); }
+.dbox b { display: block; font-size: 14px; }
+.thick { border-width: 3px; }
+.y { background: var(--yellow); }
+.p { background: var(--pink); }
+.u { background: var(--purple); }
+.w { background: var(--white); }
+.g { background: var(--band); }
+.row { display: grid; gap: 14px; min-width: 0; }
+
+/* 竖向箭头 */
+.down { height: 34px; display: flex; justify-content: center; }
+.down i { width: 3px; background: var(--arrow); position: relative; }
+.down i::after { content: ""; position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); border: 8px solid transparent; border-top: 11px solid var(--arrow); border-bottom: 0; }
+.down.up i::after { bottom: auto; top: -2px; border-top: 0; border-bottom: 11px solid var(--arrow); }
+
+/* 中部：独立进程 | 箭头 | 网关 + 平台 | 箭头 | 业务系统 */
+.mid { display: grid; grid-template-columns: 210px 116px minmax(0, 1fr) 116px 190px; align-items: stretch; }
+.outline { border: 2px dashed var(--outline); padding: 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.side-l { justify-content: space-around; }
+.side-l .title { font-weight: 700; font-size: 16px; text-align: center; }
+.side-l .dbox { border-width: 3px; padding: 14px 8px; }
+
+.gw { background: var(--band); border: 2px dashed var(--dash); padding: 14px 16px; display: grid; grid-template-columns: 110px 1fr; gap: 14px; align-items: center; }
+.gw .name { font-weight: 700; font-size: 15px; line-height: 1.4; }
+.gw .name .m { display: block; font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--muted); }
+.items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 18px; }
+.it { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
+.it svg { width: 22px; height: 22px; flex: none; stroke: var(--icon); }
+
+.plat { background: var(--block); padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 14px; color: var(--on-block); }
+.plat-hd { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; font-weight: 700; font-size: 16px; }
+.grp { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; }
+.grp .vt { font-size: 16px; }
+.cell { display: grid; gap: 10px; min-width: 0; }
+.panel { background: var(--white); border-radius: 6px; padding: 10px; display: grid; gap: 10px; min-width: 0; }
+
+/* 横向箭头：单向与双向 */
+.arrows { display: flex; flex-direction: column; justify-content: space-around; padding: 0 6px; }
+.ha { display: flex; flex-direction: column; gap: 6px; font-size: 13px; text-align: center; line-height: 1.5; }
+.line { height: 3px; background: var(--arrow); position: relative; margin: 0 6px; }
+.line.r::after, .line.l::before { content: ""; position: absolute; top: 50%; transform: translateY(-50%); border: 8px solid transparent; }
+.line.r::after { right: -6px; border-left: 12px solid var(--arrow); border-right: 0; }
+.line.l::before { left: -6px; border-right: 12px solid var(--arrow); border-left: 0; }
+.dbl { height: 14px; background: var(--red); position: relative; margin: 0 22px; border-block: 1px solid var(--red-edge); }
+.dbl::before, .dbl::after { content: ""; position: absolute; top: 50%; transform: translateY(-50%); border: 17px solid transparent; }
+.dbl::before { left: -22px; border-right: 22px solid var(--red); border-left: 0; }
+.dbl::after { right: -22px; border-left: 22px solid var(--red); border-right: 0; }
+
+.side-r { background: var(--side); padding: 22px 18px; display: flex; flex-direction: column; gap: 16px; justify-content: space-around; }
+.side-r .title { color: #fff; font-weight: 700; font-size: 17px; text-align: center; }
+.side-r .wb { background: var(--side-box); color: var(--side-fg); padding: 14px 10px; text-align: center; font-weight: 700; font-size: 14px; line-height: 1.5; }
+.side-r .sdk { border: 2px dashed rgba(255,255,255,.7); color: #fff; padding: 10px; text-align: center; font-size: 13px; }
+
+/* 基础设施 */
+.sg { display: grid; grid-template-columns: repeat(3, 1fr) 1.7fr; gap: 18px; align-items: stretch; }
+.sb { background: var(--sage); padding: 16px 12px; text-align: center; font-size: 16px; line-height: 1.5; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.ops { background: var(--sage-soft); border: 2px dashed var(--outline); padding: 12px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.ops div { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+
+</style>
+
+<div class="scroll">
+<div class="arch">
+
+  <section class="band">
+    <div class="vt">接入端</div>
+    <div class="row">
+      <div class="row" style="grid-template-columns: repeat(6, minmax(0, 1fr))">
+        <div class="dbox w thick"><b>统一门户</b></div>
+        <div class="dbox w thick"><b>平台控制台</b></div>
+        <div class="dbox w thick"><b>业务系统前端</b></div>
+        <div class="dbox w thick"><b>Agent 桌面端</b></div>
+        <div class="dbox w thick"><b>第三方系统</b></div>
+        <div class="dbox w thick"><b>现场设备</b></div>
+      </div>
+      <div class="dbox g"><b style="display:inline">前端壳</b> · OIDC + PKCE · 静默续期 · 门户导航 · 平台组件</div>
+    </div>
+  </section>
+
+  <div class="down"><i></i></div>
+
+  <section class="mid">
+
+    <div class="outline side-l">
+      <div class="title">独立进程</div>
+      <div class="dbox u"><b>算子节点</b>OCR · 抽取 · 向量化</div>
+      <div class="dbox u"><b>平台 Worker</b>定时 · 异步 · 流水线</div>
+      <div class="dbox u"><b>WeKnora</b>知识库 · Agent 引擎</div>
+      <div class="dbox u"><b>边缘代理</b>设备驱动 · 本地缓存</div>
+    </div>
+
+    <div class="arrows">
+      <div class="ha"><div class="dbl"></div><span>任务领取<br>/invoke</span></div>
+    </div>
+
+    <div class="outline">
+      <div class="gw">
+        <div class="name">网关<span class="m">APISIX</span></div>
+        <div class="items">
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="12" cy="6" r="3"/><path d="M10.5 8.5 7.5 15.5M13.5 8.5l3 7"/></svg>负载均衡</span>
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>JWT 校验</span>
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>身份头签名</span>
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 12h4l3-7 4 14 3-7h2"/></svg>限流 · 灰度</span>
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg>健康检查</span>
+          <span class="it"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/></svg>etcd</span>
+        </div>
+      </div>
+
+      <div class="plat">
+        <div class="plat-hd">平台</div>
+
+        <div class="grp">
+          <div class="vt">认证</div>
+          <div class="cell" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
+            <div class="dbox y"><b>身份账号 · 租户 · SSO</b>OIDC · 联邦 IdP · 租户启停</div>
+            <div class="dbox y"><b>应用接入</b>租户开通 · 路由下发</div>
+            <div class="dbox y"><b>客户端发布</b>版本 · 灰度</div>
+            <div class="dbox y"><b>控制台权限</b>RBAC · system / tenant / app / resource</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="vt">能力</div>
+          <div class="cell" style="grid-template-columns: repeat(3, minmax(0, 1fr))">
+            <div class="dbox y"><b>能力目录</b></div>
+            <div class="dbox y"><b>应用空间 · 授权</b></div>
+            <div class="dbox y"><b>统一调用 · 计量</b></div>
+            <div class="panel" style="grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr))">
+              <div class="dbox p"><b>模型网关</b></div>
+              <div class="dbox p"><b>知识库</b></div>
+              <div class="dbox p"><b>Agent</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="vt">数据</div>
+          <div class="cell" style="grid-template-columns: 1fr 1fr 2fr">
+            <div class="dbox y"><b>数据采集</b></div>
+            <div class="dbox y"><b>数据标注</b></div>
+            <div class="panel" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+              <div class="dbox p"><b>任务调度</b></div>
+              <div class="dbox p"><b>事件分发</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrows">
+      <div class="ha"><span>能力调用</span><div class="line l"></div></div>
+      <div class="ha"><div class="line r"></div><span>事件</span></div>
+    </div>
+
+    <div class="side-r">
+      <div class="title">业务系统</div>
+      <div class="wb">智慧档案室</div>
+      <div class="wb">文书加工系统</div>
+      <div class="wb">统建系统</div>
+      <div class="wb">库房管理</div>
+      <div class="sdk"><b>SDK / Starter</b></div>
+    </div>
+
+  </section>
+
+  <div class="down up"><i></i></div>
+
+  <section class="band">
+    <div class="vt">基础设施</div>
+    <div class="sg">
+      <div class="sb">PostgreSQL + pgvector</div>
+      <div class="sb">Redis</div>
+      <div class="sb">MinIO</div>
+      <div class="ops"><div><span>etcd 网关配置</span><span>运维看板：MinIO / APISIX / etcd</span><span>Docker Compose</span><span>镜像仓库</span><span>Keepalived</span><span>OpenTelemetry</span><span>Prometheus</span><span>Loki</span><span>Grafana</span></div></div>
+    </div>
+  </section>
+
+</div>
+</div>
