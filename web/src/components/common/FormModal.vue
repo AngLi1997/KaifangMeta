@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// 表单弹窗：统一 n-modal 外观与「取消 / 保存」底栏；confirm 非空时保存前二次确认
+// 表单弹窗：统一 n-modal 外观与「取消 / 保存」底栏；confirm 非空时保存前二次确认；readonly 时只读查看，底栏只有「关闭」
 const props = withDefaults(defineProps<{
   title: string
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   confirm?: string
+  readonly?: boolean
 }>(), { size: 'md' })
 
 const emit = defineEmits<{ submit: [] }>()
@@ -23,7 +24,12 @@ const widthClass = computed(() => ({ sm: 'w-480px', md: 'w-560px', lg: 'w-640px'
   >
     <slot />
     <template #action>
-      <n-space justify="end">
+      <n-space v-if="readonly" justify="end">
+        <n-button @click="show = false">
+          关闭
+        </n-button>
+      </n-space>
+      <n-space v-else justify="end">
         <n-button @click="show = false">
           取消
         </n-button>

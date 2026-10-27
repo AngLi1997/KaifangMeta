@@ -6,13 +6,15 @@
 
 | 组件 | 路径 | 用途 |
 |------|------|------|
-| `FormModal` | `components/common/FormModal.vue` | 表单弹窗：统一外观与「取消 / 保存」底栏；`v-model:show` `title` `size` `loading` `confirm` `@submit` |
+| `FormModal` | `components/common/FormModal.vue` | 表单弹窗：统一外观与「取消 / 保存」底栏；`v-model:show` `title` `size` `loading` `confirm` `@submit`；只读查看传 `readonly`，底栏只有「关闭」 |
 | `SearchCard` | `components/common/SearchCard.vue` | 列表页查询区：行内表单 + 搜索 / 重置，回车触发搜索；`@search` `@reset` |
 | `Pagination` | `components/common/Pagination.vue` | 分页，`:count="total"`，`@change(page, pageSize)`；配合 `usePageTable` |
 | `DataTable` | `components/common/DataTable.vue` | 表格占满卡片剩余高度，分页栏贴底，空数据展示空态；单元格不换行，按列宽之和自动计算 `scroll-x`；`:count` 可省略（如树表） |
 | `NovaIcon` | `components/common/NovaIcon.vue` | 按字符串渲染图标（菜单、动态数据）：`<nova-icon icon="icon-park-outline:api" :size="18" />` |
 | `IconSelect` | `components/common/IconSelect.vue` | 图标选择器（菜单表单）；需联网加载图标集 |
 | `HelpInfo` | `components/common/HelpInfo.vue` | 字段旁的问号提示，替代表单下方的说明文字 |
+| `Workbench` | `components/custom/workbench/Workbench.vue` | 标注工作台：按模板 `<Workbench>` 布局渲染，公共命令（撤销、重做、保存、提交、查看与导出）；用法见 `docs/platform/annotation/components/` |
+| `LayoutDesigner` | `components/custom/workbench/LayoutDesigner.vue` | 工作台拖拽布局设计器，`v-model` 为模板 XML；新组件先登记到同目录 `layout.ts` 的 `COMPONENTS` |
 | `CopyText` | `components/custom/CopyText.vue` | ID / 密钥 + 一键复制；固定长度的 ID 传 `maxLength="none"` 完整显示，列宽用 `COL_WIDTH.id` |
 | `DarkModeSwitch` / `LangsSwitch` | `components/common/` | 主题、语言切换（已在顶栏） |
 | `CommonWrapper` | `components/common/CommonWrapper.vue` | 顶栏小按钮的统一外框 |

@@ -122,6 +122,10 @@ function getResult(): Record<string, unknown>[] | null {
   return store?.annotationStore?.selected?.serializeAnnotation() ?? null
 }
 
+/** 撤销 / 重做：交给编辑器自身的标注历史 */
+const undo = () => store?.annotationStore?.selected?.history?.undo()
+const redo = () => store?.annotationStore?.selected?.history?.redo()
+
 watch(() => [props.config, props.data, props.result], () => {
   editor = null
   store = null
@@ -129,7 +133,7 @@ watch(() => [props.config, props.data, props.result], () => {
   frameKey.value++
 })
 onBeforeUnmount(() => editor?.destroy?.())
-defineExpose({ getResult })
+defineExpose({ getResult, undo, redo })
 </script>
 
 <template>

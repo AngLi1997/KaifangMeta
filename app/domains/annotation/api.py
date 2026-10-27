@@ -229,7 +229,7 @@ async def get_item(task_id: int = Query(...), id: int = Query(None, description=
     for key, value in data.items():
         if value == FILE_REF:
             data[key] = await run_in_threadpool(
-                get_minio_client().presigned_get_object, settings.MINIO_BUCKET, item.file
+                get_minio_client(public=True).presigned_get_object, settings.MINIO_BUCKET, item.file
             )
     prev_item = await items.filter(id__lt=item.id).order_by("-id").first()
     next_item = await items.filter(id__gt=item.id).order_by("id").first()
@@ -244,11 +244,15 @@ async def get_item(task_id: int = Query(...), id: int = Query(None, description=
     )
 
 
-@router.post("/item/save", summary="提交标注结果")
+@router.post("/item/save", summary="保存或提交标注结果")
 async def save_item(req: ItemSave):
     item = await Item.filter(_tenant_q(), id=req.id).first()
     if not item:
         raise HTTPException(status_code=404, detail="条目不存在")
+    if req.draft:
+        item.result = req.result
+        await item.save(update_fields=["result"])
+        return Success(msg="已保存")
     user = await _current_user()
     item.result = req.result
     item.status = "LABELED"

@@ -186,6 +186,71 @@ a.app:hover { border-color: var(--accent); }
 .drop { border: 1.5px dashed var(--line); border-radius: 6px; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: var(--sunk); text-align: center; }
 del { color: var(--err); background: var(--err-soft); padding: 0 4px; border-radius: 2px; }
 ins { color: var(--ok); background: var(--ok-soft); text-decoration: none; padding: 0 4px; border-radius: 2px; }
+/* 工作台布局与插件（#label-form、#anno-layout） */
+.main:has(> .wbx) { padding: 0; }
+.wbx { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.wtop { display: flex; align-items: center; gap: 2px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.wtop .btn { border-color: transparent; background: transparent; }
+.wtop .btn:hover { background: var(--sunk); }
+.wtop .btn.on { color: var(--accent); background: var(--accent-soft); }
+.wtop .vr { width: 1px; height: 18px; background: var(--line); margin: 0 6px; }
+kbd { font-family: var(--mono); font-size: 10px; border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; opacity: .7; }
+.warm { padding: 7px 16px; background: var(--accent-soft); color: var(--accent); border-bottom: 1px solid var(--line); }
+.wmid { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 12px; }
+.wside { flex: none; display: flex; flex-direction: column; min-height: 0; }
+.wside.col { width: 36px; align-items: center; padding-top: 8px; gap: 6px; writing-mode: vertical-rl; letter-spacing: .2em; cursor: pointer; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.wpane { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.wpane > .card { flex: none; }
+.wbot { display: flex; align-items: center; gap: 18px; padding: 5px 16px; background: var(--panel); border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.wbot .sp { flex: 1; }
+.fgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.fld { display: flex; flex-direction: column; gap: 4px; padding: 6px; margin: -6px; border-radius: 4px; }
+.fld.armed { background: var(--accent-soft); box-shadow: inset 2px 0 var(--accent); }
+.fld > span { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.fld > span b { color: var(--err); font-weight: 400; }
+.fld .ocr { margin-left: auto; cursor: pointer; border: 0; background: none; color: var(--faint); font-size: 12px; padding: 0 2px; }
+.fld .ocr:hover, .fld.armed .ocr { color: var(--accent); }
+.fld .inp.src { border-color: var(--ok); }
+.cv { flex: 1; min-height: 360px; overflow: auto; background: var(--sunk); display: grid; place-items: center; padding: 24px; position: relative; }
+.cv.armed { cursor: crosshair; }
+.cv .doc { width: 420px; transition: transform .15s; user-select: none; }
+.doc table.reg { font-size: 10px; border: 1px solid var(--ink); }
+.doc table.reg td { padding: 5px 6px; border: 1px solid var(--ink); white-space: normal; color: var(--ink); }
+.doc table.reg td:first-child { width: 28%; text-align: center; }
+.doc [data-ocr].hit { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.sel { position: fixed; border: 1.5px dashed var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); pointer-events: none; z-index: 30; }
+.iact { display: flex; gap: 2px; }
+.iact button { font: inherit; border: 1px solid transparent; background: none; color: var(--muted); padding: 2px 8px; border-radius: 4px; cursor: pointer; }
+.iact button:hover { background: var(--sunk); color: var(--fg); border-color: var(--line); }
+td .inp { width: 100%; padding: 3px 6px; border-color: transparent; background: transparent; }
+td .inp:hover, td .inp:focus { border-color: var(--line); background: var(--panel); }
+td .inp.chg { color: var(--warn); }
+.drawer { position: fixed; inset: 0 0 0 auto; width: 520px; max-width: 100%; background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgb(0 0 0 / .12); z-index: 40; display: flex; flex-direction: column; }
+.drawer .ch { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-weight: 500; }
+.drawer pre.code { flex: 1; margin: 12px 16px 16px; overflow: auto; }
+/* 布局设计器 */
+.lz { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.lz .row { display: flex; gap: 8px; min-height: 260px; }
+.dz { border: 1.5px dashed var(--line); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; background: var(--sunk); }
+.dz.h { flex-direction: row; flex-wrap: wrap; align-items: center; }
+.dz > small { color: var(--faint); font-family: var(--mono); font-size: 11px; }
+.dz.ok { border-color: var(--accent); background: var(--accent-soft); }
+.dz.no { opacity: .45; }
+.dz { min-width: 0; }
+.pl { display: flex; align-items: center; gap: 6px; padding: 6px 10px; white-space: nowrap; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: grab; }
+.pl.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.pl .x { margin-left: auto; border: 0; background: none; color: var(--faint); cursor: pointer; }
+.pl .m { color: var(--faint); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pl.cvb { flex-direction: column; align-items: stretch; overflow: visible; white-space: normal; }
+.pl.cvb .dz { background: var(--panel); }
+.pl.ins { box-shadow: -3px 0 0 var(--accent); }
+.dz:not(.h) > .pl.ins { box-shadow: 0 -3px 0 var(--accent); }
+.pv { position: fixed; z-index: 50; width: 240px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgb(0 0 0 / .14); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.pv .doc { margin: 0 auto; }
+.pl.used { cursor: default; color: var(--faint); background: var(--sunk); }
+.pal { display: flex; flex-wrap: wrap; gap: 6px; }
+.pal .pl { padding: 4px 8px; }
+.dz.h .pl { padding: 4px 8px; }
 @media (prefers-reduced-motion: no-preference) { .main { animation: fade .16s ease-out; } }
 @keyframes fade { from { opacity: .4; } to { opacity: 1; } }
 </style>
@@ -242,7 +307,7 @@ const ARCHIVE_NAV = [
   ['系统', [['ar-roles', '角色与权限']]],
 ];
 const PARENT = { 'op-ocr': 'caps', 'kb-detail': 'kb', 'agent-detail': 'agents', 'ar-detail': 'ar-list',
-  'ar-batch': 'ar-import', 'anno-task': 'label', 'anno-new': 'label', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
+  'ar-batch': 'ar-import', 'anno-task': 'label', 'anno-new': 'label', 'anno-layout': 'anno-tpl', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
 // 导入 → 标注 → 回写 跨系统工作流
 const FLOW = [['ar-import', '导入', '智慧档案室'], ['ar-batch', '解析与预抽取', '智慧档案室'], ['ar-send', '送标注', '智慧档案室'],
   ['label-work', '标注', '中台 · 标注工作台'], ['label-review', '质检回传', '中台 · 标注工作台'], ['ar-writeback', '回写确认', '智慧档案室']];
@@ -654,7 +719,7 @@ km.capability("archive.import.ocr").invoke(req, OcrResult.class);
         <span class="note">系统</span><a class="l2">OCR 文本校对</a><a class="l2">目标检测</a><a class="l2">视频分段与跟踪</a><a class="l2">实体与关系</a><a class="l2">问答评测</a>
         <span class="note">本租户</span><a class="l2 on">文书著录要素校对</a><a class="l2">版面要素框选</a>
         <span class="note">智慧档案室</span><a class="l2">密级判定</a></div>`)}
-      ${card('<div class="seg"><a class="on">XML</a><a>参数</a><a>映射</a><a>质检</a></div><span class="m mu">archive.ws-item · v4</span>', `<pre class="code">&lt;View&gt;
+      ${card('<div class="seg"><a class="on">XML</a><a href="#anno-layout">布局</a><a>参数</a><a>映射</a><a>质检</a></div><span class="m mu">archive.ws-item · v4</span>', `<pre class="code">&lt;View&gt;
   &lt;Image name="page" valueList="$pages"/&gt;
   &lt;Header value="题名"/&gt;
   &lt;TextArea name="title" toName="page" editable="true"/&gt;
@@ -933,12 +998,280 @@ annotationClient.createTask(CreateTaskReq.builder()
         ['<span class="m">u_3303</span>', '陈立', '保管科', '<a class="btn ghost">移除</a>'],
       ]) + `<div class="cb"><button class="btn">添加成员</button></div>`, true)}
     </div>`,
+  'label-form': () => wfView(),
+  'anno-layout': () => ldView(),
 };
+
+// 工作台布局与插件演示：#label-form 为五区域工作台，#anno-layout 为拖拽布局设计器；状态只在内存中
+const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const WF_FIELDS = [['主体信息', [['subject_name', '主体名称', 'text', 1], ['credit_code', '统一社会信用代码', 'text', 1], ['subject_type', '主体类型', 'select', 1, ['有限责任公司', '股份有限公司', '个人独资企业', '个体工商户']], ['legal_rep', '法定代表人', 'text'], ['address', '住所', 'text'], ['capital', '注册资本', 'text']]],
+  ['登记信息', [['reg_date', '申请日期', 'date', 1], ['tags', '标识', 'checkbox', 0, ['重点', '涉密', '待补']]]]];
+const WF_FILES = ['企业设立登记申请书', '营业执照副本复印件', '公司章程', '股东会决议'];
+const W = { rot: 0, zoom: 0.8, file: 0, right: true, armed: null, drawer: false, fmt: 'json', form: { tags: [] }, src: {}, chg: [], log: [],
+  rows: WF_FILES.concat('法定代表人身份证复印件').map((t, i) => ({ seq: i + 1, title: t, author: i === 4 ? '林志远' : '四川星辰信息技术有限公司', date: '2026-08-11', pages: ['1-8', '9-12', '13-22', '23-25', '26-27'][i] })) };
+const ROWS0 = JSON.stringify(W.rows);
+const wfReq = () => WF_FIELDS.flatMap(g => g[1]).filter(f => f[3]);
+const wfDone = () => wfReq().filter(f => W.form[f[0]]).length;
+function wfLog(t) { W.log.unshift(`${new Date().toTimeString().slice(0, 8)} ${t}`); const e = document.getElementById('wf-st'); if (e) e.outerHTML = wfStatus(); }
+const wfStatus = () => `<footer class="wbot" id="wf-st"><span>必填 <b class="m">${wfDone()}/${wfReq().length}</b></span><span class="sp"></span><span>${WF_FILES[W.file]} · ${W.file + 1}/${WF_FILES.length}</span><span class="m">${W.rot}° · ${Math.round(W.zoom * 100)}%</span><span title="${esc(W.log.slice(0, 8).join('\n'))}">日志 <b class="m">${W.log.length}</b>${W.log[0] ? ` <span class="m mu">${esc(W.log[0])}</span>` : ''}</span></footer>`;
+
+function wfField([k, label, type, req, opts]) {
+  const v = W.form[k] ?? '', on = W.armed === k, cls = W.src[k] ? ' src' : '';
+  const input = type === 'select' ? `<select class="inp${cls}" id="f-${k}" onchange="wfSet('${k}',this.value)"><option value="">请选择</option>${opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select>`
+    : type === 'checkbox' ? `<div class="bar">${opts.map(o => `<label class="chk" style="padding:0"><input type="checkbox"${W.form.tags.includes(o) ? ' checked' : ''} onchange="wfTag('${o}',this.checked)">${o}</label>`).join('')}</div>`
+    : `<input class="inp${cls}" id="f-${k}" ${type === 'date' ? 'type="date"' : ''} value="${esc(v)}" onfocus="W.focus='${k}'" oninput="wfSet('${k}',this.value)">`;
+  return `<label class="fld${on ? ' armed' : ''}"><span>${req ? '<b>*</b>' : ''}${label}${type !== 'checkbox' ? `<button class="ocr" title="框选回填" onclick="event.preventDefault();wfArm('${k}')">⌗ 框选</button>` : ''}</span>${input}</label>`;
+}
+function wfDoc() {
+  const regs = [['名称', '四川星辰信息技术有限公司'], ['统一社会信用代码', '915101008557726123'], ['类型', '有限责任公司（自然人投资或控股）'], ['住所', '成都市成华区建设路 55 号'], ['法定代表人', '张明'], ['注册资本', '100 万元人民币'], ['申请日期', '2026 年 08 月 11 日']];
+  return `<div class="doc" id="wf-doc" style="transform:rotate(${W.rot}deg) scale(${W.zoom})"><div class="tt" style="font-size:16px;letter-spacing:.2em">${WF_FILES[W.file]}</div><div class="no">四川星辰信息技术有限公司</div>
+    ${W.file ? '<div class="ln"></div>'.repeat(9) : `<table class="reg">${regs.map(([a, b]) => `<tr><td>${a}</td><td data-ocr="${b}">${b}</td></tr>`).join('')}</table>`}<div class="seal"></div></div>`;
+}
+function wfView() {
+  const tb = [['撤销', ''], ['重做', ''], ['|'], ['打开', ''], ['查看数据', `W.drawer=true;wf()`], ['|'], [`OCR 框选 <kbd>⌘O</kbd>`, `wfArm(W.focus||'subject_name')`, W.armed], ['版面分析', `wfLog('版面分析：预留，未接入')`], ['|'], ['导出 JSON', `wfExport('json')`], ['导出 YAML', `wfExport('yaml')`]];
+  const label = W.armed && WF_FIELDS.flatMap(g => g[1]).find(f => f[0] === W.armed)[1];
+  return `<div class="wbx" id="wf">
+    <div class="wtop">${tb.map(([l, fn, on]) => l === '|' ? '<i class="vr"></i>' : `<button class="btn sm${on ? ' on' : ''}" onclick="${fn}">${l}</button>`).join('')}<span class="sp" style="flex:1"></span>
+      <button class="btn sm" onclick="W.right=!W.right;wf()">${W.right ? '收起' : '展开'}扩展栏</button><a class="btn sm" href="#anno-layout">编辑布局</a><button class="btn sm" onclick="wfLog('草稿已保存')">保存</button><button class="btn sm pri" onclick="wfLog('已提交')">提交并下一份</button></div>
+    ${W.armed ? `<div class="warm">正在识别「${label}」：在右侧图像上框选文字区域，Esc 取消</div>` : ''}
+    <div class="wmid">
+      <aside class="wside" style="width:200px">${card('档案信息', `<dl class="kv" style="grid-template-columns:56px 1fr">${[['档号', '<span class="m">Q012-2026-0815</span>'], ['全宗', '市场监管'], ['年度', '2026'], ['期限', '永久'], ['批次', '<span class="m">IMP-20261027-01</span>'], ['工单', '<span class="m">at_9a20</span>']].map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`)}</aside>
+      <section class="wpane" style="flex:55">
+        ${card('<span>档案详情数据</span><span class="note m">RecordForm · meta</span>', WF_FIELDS.map(([g, fs]) => `<div class="mu" style="font-weight:500">${g}</div><div class="fgrid">${fs.map(wfField).join('')}</div>`).join(''))}
+        ${card('<span>卷内文件目录</span><span class="bar"><span class="note m">DataTable · archive.files</span><button class="btn sm" onclick="wfLog(\'GET /api/archives/Q012-2026-0815/files 200\')">刷新</button></span>', T(['序号', '文件题名', '责任者', '成文日期', '页号'],
+          W.rows.map((r, i) => [`<span class="m">${r.seq}</span>`, ...['title', 'author', 'date'].map(c => `<input class="inp${r[c] !== JSON.parse(ROWS0)[i][c] ? ' chg' : ''}" value="${esc(r[c])}" onchange="wfRow(${i},'${c}',this)">`), `<span class="m">${r.pages}</span>`])), true)}
+      </section>
+      <section class="wpane" style="flex:45">
+        <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+          <div class="ch"><span>内容</span><span class="iact">${[['⟲ 左旋', 'wfRot(-90)'], ['⟳ 右旋', 'wfRot(90)'], ['＋', 'wfZoom(.1)'], ['－', 'wfZoom(-.1)'], ['适应', 'W.rot=0;wfZoom(0.8-W.zoom)']].map(([l, fn]) => `<button onclick="${fn}">${l}</button>`).join('')}</span></div>
+          <div class="cv${W.armed ? ' armed' : ''}" id="wf-cv" onmousedown="wfDown(event)">${wfDoc()}</div></div>
+      </section>
+      ${W.right ? `<aside class="wside" style="width:180px">${card('电子文件', `<div class="tree">${WF_FILES.map((f, i) => `<a class="${i === W.file ? 'on' : ''}" onclick="W.file=${i};wf()">${i + 1}. ${f}</a>`).join('')}</div>`)}</aside>`
+        : `<aside class="wside col" onclick="W.right=true;wf()">电子文件</aside>`}
+    </div>${wfStatus()}
+    ${W.drawer ? `<div class="drawer"><div class="ch">表单数据<div class="seg">${['json', 'yaml'].map(f => `<a class="${W.fmt === f ? 'on' : ''}" onclick="W.fmt='${f}';wf()">${f.toUpperCase()}</a>`).join('')}</div><span class="sp" style="flex:1"></span>
+      <button class="btn sm" onclick="navigator.clipboard.writeText(wfText(W.fmt));wfLog('已复制')">复制</button><button class="btn sm" onclick="wfExport(W.fmt)">导出</button><button class="btn sm" onclick="W.drawer=false;wf()">关闭</button></div><pre class="code">${esc(wfText(W.fmt))}</pre></div>` : ''}
+  </div>`;
+}
+function wf() { const e = document.getElementById('wf'); if (e) e.outerHTML = wfView(); }
+function wfSet(k, v) { W.form[k] = v; delete W.src[k]; document.getElementById(`f-${k}`)?.classList.remove('src'); wfLog(`${k} = ${v}`); }
+function wfTag(o, on) { W.form.tags = on ? [...W.form.tags, o] : W.form.tags.filter(t => t !== o); wfLog(`tags = ${W.form.tags.join(',')}`); }
+function wfArm(k) { W.armed = W.armed === k ? null : k; W.focus = k; wf(); }
+function wfRot(d) { W.rot = (W.rot + d + 360) % 360; document.getElementById('wf-doc').style.transform = `rotate(${W.rot}deg) scale(${W.zoom})`; wfLog(`rotate ${d > 0 ? '+' : ''}${d}°`); }
+function wfZoom(d) { W.zoom = Math.min(2, Math.max(.3, +(W.zoom + d).toFixed(2))); wfRot(0); }
+function wfRow(i, c, el) {
+  const old = W.rows[i][c]; W.rows[i] = { ...W.rows[i], [c]: el.value };
+  W.chg = W.chg.filter(x => !(x.seq === W.rows[i].seq && x.key === c)); if (el.value !== JSON.parse(ROWS0)[i][c]) W.chg.push({ seq: W.rows[i].seq, key: c, from: JSON.parse(ROWS0)[i][c], to: el.value });
+  el.classList.toggle('chg', el.value !== JSON.parse(ROWS0)[i][c]); wfLog(`PATCH /api/archives/Q012-2026-0815/files/${W.rows[i].seq} 200（${old} → ${el.value}）`);
+}
+// 框选：按客户端坐标与文档中 data-ocr 单元格求交，旋转、缩放后同样成立
+function wfDown(e) {
+  if (!W.armed) return; e.preventDefault();
+  const x0 = e.clientX, y0 = e.clientY, sel = document.createElement('div'); sel.className = 'sel'; document.body.append(sel);
+  const box = ev => ({ left: Math.min(x0, ev.clientX), top: Math.min(y0, ev.clientY), right: Math.max(x0, ev.clientX), bottom: Math.max(y0, ev.clientY) });
+  const move = ev => { const b = box(ev); Object.assign(sel.style, { left: b.left + 'px', top: b.top + 'px', width: b.right - b.left + 'px', height: b.bottom - b.top + 'px' }); };
+  const up = ev => {
+    removeEventListener('mousemove', move); removeEventListener('mouseup', up); sel.remove();
+    const b = box(ev), d = document.getElementById('wf-doc').getBoundingClientRect();
+    const hits = [...document.querySelectorAll('#wf-doc [data-ocr]')].filter(c => { const r = c.getBoundingClientRect();
+      const ix = Math.max(0, Math.min(r.right, b.right) - Math.max(r.left, b.left)), iy = Math.max(0, Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top));
+      return ix * iy > 0.3 * r.width * r.height; });
+    if (!hits.length) return wfLog('OCR：框选区域未识别到文字');
+    wfFill(W.armed, hits.map(c => c.dataset.ocr).join(''), [(b.left - d.left) / d.width, (b.top - d.top) / d.height, (b.right - b.left) / d.width, (b.bottom - b.top) / d.height].map(n => +n.toFixed(3)));
+  };
+  addEventListener('mousemove', move); addEventListener('mouseup', up);
+}
+function wfFill(k, text, bbox) {
+  const f = WF_FIELDS.flatMap(g => g[1]).find(x => x[0] === k); let v = text;
+  if (f[2] === 'date') { const m = text.replace(/\s/g, '').match(/(\d{4})[年./-](\d{1,2})[月./-](\d{1,2})/); v = m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : ''; }
+  if (f[2] === 'select') v = f[4].find(o => o === text) || f[4].find(o => text.includes(o)) || '';
+  if (!v) { W.armed = null; wf(); return wfLog(`OCR「${text}」无法转换为${f[1]}`); }
+  W.form[k] = v; W.src[k] = { file: W.file + 1, bbox, text, confidence: 0.97, by: 'ocr.general' };
+  wfLog(`OCR ${f[1]} ← ${text}`); W.armed = null; wf();
+}
+const wfSnap = () => ({ item: { id: 'it_0012', task: 'at_9a20', template: 'archive.register@2' }, view: { file: W.file + 1, rotation: W.rot, zoom: W.zoom },
+  plugins: { meta: { ...W.form, _sources: W.src }, files: { rows: W.rows, changes: W.chg } },
+  annotation: { result: Object.entries(W.src).map(([k, s]) => ({ from_name: 'ocr_box', to_name: 'page', type: 'rectangle', meta: { field: k }, value: Object.fromEntries(['x', 'y', 'width', 'height'].map((k, i) => [k, +(s.bbox[i] * 100).toFixed(1)])) })) } });
+function toYaml(v, ind = '') {
+  const sc = x => typeof x === 'string' ? (/^[\p{L}_][\p{L}\p{N}_ .（）-]*$/u.test(x) ? x : JSON.stringify(x)) : String(x);
+  const empty = x => x && typeof x === 'object' && !Object.keys(x).length;
+  if (Array.isArray(v)) return v.map(x => `${ind}- ${x && typeof x === 'object' && !empty(x) ? toYaml(x, ind + '  ').trimStart() : empty(x) ? JSON.stringify(x) : sc(x)}`).join('\n');
+  return Object.entries(v).map(([k, x]) => x && typeof x === 'object' && !empty(x) ? `${ind}${k}:\n${toYaml(x, ind + '  ')}` : `${ind}${k}: ${empty(x) ? JSON.stringify(x) : sc(x)}`).join('\n');
+}
+const wfText = f => f === 'yaml' ? toYaml(wfSnap()) : JSON.stringify(wfSnap(), null, 2);
+function wfExport(f) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([wfText(f)], { type: 'text/plain' })); a.download = `it_0012.${f}`; a.click(); wfLog(`导出 it_0012.${f}`); }
+addEventListener('keydown', e => {
+  if (location.hash !== '#label-form') return;
+  if (e.key === 'Escape' && W.armed) { W.armed = null; wf(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'o') { e.preventDefault(); wfArm(W.focus || 'subject_name'); }
+});
+
+// 布局设计器：布局树 L ↔ XML 双向转换，拖拽与代码编辑同一份数据
+// 区域是固定骨架，组件库只放区域内可放置的组件；按钮 / 状态项用 type:v 区分，如 Button:save
+const BAR = ['top', 'bottom'], SIDE = ['left', 'right'], PANE = ['p1', 'p2'];
+const PLUG = { 'Button:open': ['打开', BAR, '按钮'], 'Button:save': ['保存', BAR, '按钮'], 'Button:view-data': ['查看数据', BAR, '按钮'], 'Button:undo': ['撤销', BAR, '按钮'], 'Button:redo': ['重做', BAR, '按钮'],
+  'Button:ocr-box': ['OCR 框选', BAR, '按钮'], 'Button:layout-analysis': ['版面分析', BAR, '按钮'], 'Button:export-json': ['导出 JSON', BAR, '按钮'], 'Button:export-yaml': ['导出 YAML', BAR, '按钮'], 'Button:submit': ['提交并下一份', BAR, '按钮'], Spacer: ['弹性间隔', BAR, '按钮'],
+  'Status:required': ['必填进度', BAR, '状态项'], 'Status:page': ['页码', BAR, '状态项'], 'Status:zoom': ['旋转与缩放', BAR, '状态项'], 'Status:log': ['日志', BAR, '状态项'],
+  InfoPanel: ['信息栏', SIDE, '侧栏'], FileList: ['文件列表', SIDE, '侧栏'], ItemList: ['条目列表', ['left'], '侧栏'],
+  RecordForm: ['著录表单', PANE, '内容'], DataTable: ['数据表格', PANE, '内容'], ImageActions: ['图像动作栏', PANE, '内容'], Canvas: ['画布', PANE, '内容'] };
+// Label Studio 原生标签只能放进画布（区域键 cv）：同一编辑器实例内 toName 才能互相引用；kind：obj 对象 / ctl 控件 / vis 视觉
+const LS = { Image: ['图像', 'obj', { valueList: '$pages' }], Text: ['文本', 'obj', { value: '$text' }], HyperText: ['HTML', 'obj', { value: '$html' }], Audio: ['音频', 'obj', { value: '$audio' }],
+  Video: ['视频', 'obj', { value: '$video' }], Paragraphs: ['对话段落', 'obj', { value: '$dialogue', layout: 'dialogue' }],
+  Rectangle: ['矩形框', 'ctl'], RectangleLabels: ['矩形标签', 'ctl', {}, '印章,签名,标题'], PolygonLabels: ['多边形标签', 'ctl', {}, '印章,表格'], KeyPointLabels: ['关键点', 'ctl', {}, '角点'],
+  BrushLabels: ['画笔标签', 'ctl', {}, '涂改'], Labels: ['实体标签', 'ctl', {}, '人名,机构,日期'], Choices: ['单 / 多选', 'ctl', { choice: 'single' }, '公开,内部,秘密'], TextArea: ['文本输入', 'ctl'],
+  Number: ['数字', 'ctl'], DateTime: ['日期时间', 'ctl', { only: 'date' }], Rating: ['评分', 'ctl'], Taxonomy: ['分类树', 'ctl', {}, '文书,科技,会计'], Header: ['标题文字', 'vis', { value: '标题' }] };
+const LS_GROUP = { obj: 'Label Studio · 对象', ctl: 'Label Studio · 控件', vis: 'Label Studio · 视觉' };
+for (const [t, [n, kind]] of Object.entries(LS)) PLUG[t] = [n, ['cv'], LS_GROUP[kind]];
+PLUG.Raw = ['原始 XML', ['cv'], ''];
+const OPT_TAG = t => t === 'Choices' || t === 'Taxonomy' ? 'Choice' : 'Label';
+const lsObjs = () => L.r.cv.filter(p => LS[p.type]?.[1] === 'obj').map(p => p.attrs.name);
+const pk = p => p.v ? `${p.type}:${p.v}` : p.type;
+const VATTR = { Button: 'action', Status: 'item' };
+const REG = { cv: 'Label Studio', top: '顶部工具栏 · top', left: '左侧信息栏 · left', p1: '内容区 · 左面板', p2: '内容区 · 右面板', right: '右侧扩展栏 · right', bottom: '底部状态栏 · bottom' };
+const bars = (type, vs) => vs.split(',').map(v => v === '|' ? { type: 'Spacer' } : { type, v });
+const L = { split: 55, sel: null, mode: 'design', err: '', drag: null,
+  r: { top: bars('Button', 'undo,redo,open,view-data,ocr-box,layout-analysis,export-json,export-yaml,|,save,submit'), left: [{ type: 'InfoPanel', title: '档案信息' }],
+    p1: [{ type: 'RecordForm', title: '档案详情数据', ocr: 'ocr.general' }, { type: 'DataTable', title: '卷内文件目录', source: 'archive.files', cols: '序号,文件题名,责任者,成文日期,页号' }],
+    p2: [{ type: 'ImageActions', title: '', actions: 'rotate-left,rotate-right,zoom-in,zoom-out,fit' }, { type: 'Canvas' }],
+    cv: [{ type: 'Image', attrs: { name: 'page', valueList: '$pages' } }, { type: 'Rectangle', attrs: { name: 'ocr_box', toName: 'page' } }], right: [{ type: 'FileList', title: '电子文件列表' }], bottom: bars('Status', 'required,|,page,zoom,log') } };
+const ATTRS = ['title', 'source', 'ocr', 'actions'];
+function ldXml() {
+  const lsTag = (p, ind) => p.type === 'Raw' ? p.xml.split('\n').map(l => ind + l.trim()).join('\n') : `${ind}<${p.type}${Object.entries(p.attrs).filter(([, v]) => v !== '').map(([a, v]) => ` ${a}="${esc(v)}"`).join('')}${p.opts
+    ? `>\n${p.opts.split(',').filter(Boolean).map(o => `${ind}  <${OPT_TAG(p.type)} value="${esc(o.trim())}"/>`).join('\n')}\n${ind}</${p.type}>` : '/>'}`;
+  const tag = (p, ind) => p.type === 'Canvas' ? `${ind}<Canvas>\n${ind}  <View>\n${L.r.cv.map(c => lsTag(c, ind + '    ')).join('\n')}\n${ind}  </View>\n${ind}</Canvas>`
+    : p.type === 'DataTable' ? `${ind}<DataTable${ATTRS.filter(a => p[a]).map(a => ` ${a}="${esc(p[a])}"`).join('')}>\n${(p.cols || '').split(',').filter(Boolean).map(c => `${ind}  <Column title="${esc(c.trim())}"/>`).join('\n')}\n${ind}</DataTable>`
+    : p.v ? `${ind}<${p.type} ${VATTR[p.type]}="${p.v}"/>`
+    : `${ind}<${p.type}${ATTRS.filter(a => p[a]).map(a => ` ${a}="${esc(p[a])}"`).join('')}/>`;
+  const reg = (k, attrs = '') => L.r[k].length ? `  <Region name="${k}"${attrs}>\n${L.r[k].map(p => tag(p, '    ')).join('\n')}\n  </Region>` : '';
+  const main = `  <Region name="main" direction="row">\n${PANE.map((k, i) => `    <Pane size="${i ? 100 - L.split : L.split}%">\n${L.r[k].map(p => tag(p, '      ')).join('\n')}\n    </Pane>`).join('\n')}\n  </Region>`;
+  return `<Workbench>\n${[reg('top'), reg('left', ' width="200" collapsible="true"'), main, reg('right', ' width="180" collapsible="true"'), reg('bottom')].filter(Boolean).join('\n')}\n</Workbench>`;
+}
+function ldParse(xml) {
+  const d = new DOMParser().parseFromString(xml, 'application/xml'), root = d.documentElement;
+  if (d.querySelector('parsererror') || root.tagName !== 'Workbench') throw new Error('XML 无法解析，或根标签不是 <Workbench>');
+  const items = el => [...el.children].map(c => { const p = { type: c.tagName }; if (c.tagName === 'Canvas') r.cv = lsItems(c.querySelector('View')); if (VATTR[c.tagName]) p.v = c.getAttribute(VATTR[c.tagName]);
+    if (!PLUG[pk(p)]) throw new Error(`未知组件 <${c.tagName}${p.v ? ` ${VATTR[c.tagName]}="${p.v}"` : ''}>`);
+    ATTRS.forEach(a => c.hasAttribute(a) && (p[a] = c.getAttribute(a)));
+    if (c.tagName === 'DataTable') p.cols = [...c.children].map(x => x.getAttribute('title')).join(','); return p; });
+  const lsItems = view => [...(view?.children || [])].map(c => { const opt = [...c.children];
+    if (!LS[c.tagName] || opt.some(o => o.tagName !== OPT_TAG(c.tagName))) return { type: 'Raw', tag: c.tagName, xml: new XMLSerializer().serializeToString(c).replace(/ xmlns="[^"]*"/g, '') };
+    const p = { type: c.tagName, attrs: Object.fromEntries([...c.attributes].map(a => [a.name, a.value])) };
+    if (opt.length || LS[c.tagName][3]) p.opts = opt.map(o => o.getAttribute('value')).join(','); return p; });
+  const r = { top: [], left: [], p1: [], p2: [], right: [], bottom: [], cv: [] }; let split = L.split;
+  for (const g of root.children) { const n = g.getAttribute('name');
+    if (n === 'main') { const ps = [...g.children]; r.p1 = ps[0] ? items(ps[0]) : []; r.p2 = ps[1] ? items(ps[1]) : []; split = parseInt(ps[0]?.getAttribute('size')) || split; }
+    else if (r[n]) r[n] = items(g); else throw new Error(`未知区域 ${n}`); }
+  if ([...r.p1, ...r.p2].filter(p => p.type === 'Canvas').length !== 1) throw new Error('内容区必须且只能有一个 <Canvas>');
+  const all = Object.values(r).flat().filter(p => !LS[p.type] && p.type !== 'Raw').map(pk).filter(k => k !== 'Spacer'), dup = all.find((k, i) => all.indexOf(k) !== i);
+  if (dup) throw new Error(`${PLUG[dup][0]}重复放置`);
+  for (const k in r) for (const p of r[k]) if (!PLUG[pk(p)][1].includes(k)) throw new Error(`${PLUG[pk(p)][0]}不能放在 ${REG[k]}`);
+  const names = r.cv.filter(p => p.attrs).map(p => p.attrs.name), objs = r.cv.filter(p => LS[p.type]?.[1] === 'obj').map(p => p.attrs.name);
+  if (!objs.length) throw new Error('画布内至少需要一个 Label Studio 对象标签（Image、Text 等）');
+  const dn = names.find((n, i) => n && names.indexOf(n) !== i); if (dn) throw new Error(`name="${dn}" 重复`);
+  const bad = r.cv.find(p => LS[p.type]?.[1] === 'ctl' && !objs.includes(p.attrs.toName)); if (bad) throw new Error(`<${bad.type} name="${bad.attrs.name}"> 的 toName 未指向画布中的对象`);
+  L.r = r; L.split = split;
+}
+// 已放置的组件在组件库中置灰（弹性间隔可重复）
+const ldUsed = k => k !== 'Spacer' && !LS[k] && Object.values(L.r).flat().some(p => pk(p) === k);
+const ldChip = p => p.type === 'Spacer' ? '<span class="mu">⟷</span>' : p.type === 'Raw' ? `<span class="m">&lt;${p.tag}&gt;</span>`
+  : LS[p.type] ? `${LS[p.type][0]}<span class="m">${esc(p.attrs.name || p.attrs.value || '')}</span>${LS[p.type][1] === 'ctl' && !lsObjs().includes(p.attrs.toName) ? '<span class="tag err">toName</span>' : ''}` : PLUG[pk(p)][0];
+function ldZone(k, h) {
+  return `<div class="dz${h ? ' h' : ''}" data-k="${k}" style="${k === 'p1' ? `flex:${L.split}` : k === 'p2' ? `flex:${100 - L.split}` : SIDE.includes(k) ? 'width:140px;flex:none' : ''}"
+    ondragover="L.drag && PLUG[L.drag.key][1].includes('${k}') && event.preventDefault()" ondrop="ldDrop('${k}')"><small>${REG[k]}</small>${L.r[k].map((p, i) => `<div class="pl${p.type === 'Canvas' ? ' cvb' : ''}${L.sel && L.sel[0] === k && L.sel[1] === i ? ' on' : ''}" draggable="true"
+    ondragstart="event.stopPropagation();ldStart({key:'${pk(p)}',from:['${k}',${i}]})" ondragenter="this.classList.add('ins')" ondragleave="this.classList.remove('ins')" ondrop="ldDrop('${k}',${i})" ondragend="if(L.drag){L.drag=null;ld()}" onclick="event.stopPropagation();L.sel=['${k}',${i}];ld()">${p.type === 'Canvas' ? `<span>画布</span>${ldZone('cv')}` : `${ldChip(p)}<button class="x" onclick="event.stopPropagation();L.r['${k}'].splice(${i},1);L.sel=null;ld()">×</button>`}</div>`).join('')}</div>`;
+}
+function ldProps() {
+  if (!L.sel) return `<dl class="kv"><dt>内容区比例</dt><dd><input type="range" style="width:100%" min="25" max="75" value="${L.split}" oninput="L.split=+this.value;ld()"> <span class="m">${L.split} : ${100 - L.split}</span></dd></dl><span class="note">选中组件编辑属性</span>`;
+  const p = L.r[L.sel[0]][L.sel[1]];
+  if (p.type === 'Raw') return `<dl class="kv" style="grid-template-columns:64px minmax(0,1fr)"><dt>组件</dt><dd>原始 XML</dd></dl><pre class="code">${esc(p.xml)}</pre>`;
+  if (LS[p.type]) { const a = (k, label) => `<dt>${label}</dt><dd><input class="inp" style="width:100%" value="${esc(p.attrs[k] ?? '')}" onchange="ldAttr('${k}',this.value)"></dd>`, kind = LS[p.type][1];
+    return `<dl class="kv" style="grid-template-columns:64px minmax(0,1fr)"><dt>组件</dt><dd>${LS[p.type][0]} <span class="m mu">&lt;${p.type}&gt;</span></dd>
+      ${kind === 'vis' ? a('value', '文字') : a('name', 'name')}${kind === 'obj' ? a(p.type === 'Image' ? 'valueList' : 'value', '数据') : ''}
+      ${kind === 'ctl' ? `<dt>toName</dt><dd><select class="inp" style="width:100%" onchange="ldAttr('toName',this.value)">${['', ...lsObjs()].map(o => `<option${o === p.attrs.toName ? ' selected' : ''}>${o}</option>`).join('')}</select></dd>` : ''}
+      ${p.opts !== undefined ? `<dt>选项</dt><dd><input class="inp" style="width:100%" value="${esc(p.opts)}" onchange="L.r.cv[${L.sel[1]}].opts=this.value;ld()"></dd>` : ''}</dl>`; }
+  const f = (a, label) => `<dt>${label}</dt><dd><input class="inp" style="width:100%" value="${esc(p[a] || '')}" onchange="L.r['${L.sel[0]}'][${L.sel[1]}].${a}=this.value;ld()"></dd>`;
+  return `<dl class="kv" style="grid-template-columns:64px minmax(0,1fr)"><dt>组件</dt><dd>${PLUG[pk(p)][0]} <span class="m mu">${pk(p)}</span></dd><dt>区域</dt><dd>${REG[L.sel[0]]}</dd>
+    ${['InfoPanel', 'FileList', 'ItemList', 'RecordForm', 'DataTable'].includes(p.type) ? f('title', '标题') : ''}
+    ${p.type === 'DataTable' ? f('source', '数据源') + f('cols', '列名称') : ''}${p.type === 'RecordForm' ? f('ocr', 'OCR 能力') + '<dt>AI 提取</dt><dd><span class="tag">预留</span></dd>' : ''}${p.type === 'ImageActions' ? f('actions', '动作') : ''}</dl>`;
+}
+function ldView() {
+  const groups = [...new Set(Object.values(PLUG).map(x => x[2]))].filter(Boolean);
+  return `<div id="ld" style="display:flex;flex-direction:column;gap:16px">${ph('企业登记著录 · 布局', 'archive.register · v2 草稿', `<div class="seg"><a class="${L.mode === 'design' ? 'on' : ''}" onclick="ldMode('design')">拖拽</a><a class="${L.mode === 'xml' ? 'on' : ''}" onclick="ldMode('xml')">XML</a></div><a class="btn" href="#label-form">在工作台预览</a><button class="btn pri">保存</button>`)}
+    ${L.mode === 'xml' ? card('布局 XML', `<textarea class="inp m" id="ld-xml" rows="30" spellcheck="false">${esc(L.xml ?? ldXml())}</textarea>${L.err ? `<span class="tag err">${esc(L.err)}</span>` : ''}`)
+    : `<div class="grid" style="grid-template-columns:180px minmax(0,1fr) 260px;align-items:start">
+      ${card('组件', groups.map(g => `<span class="note">${g}</span><div class="pal">${Object.entries(PLUG).filter(x => x[1][2] === g).map(([k, [n]]) => ldUsed(k) ? `<div class="pl used" onmouseenter="ldHover(this,'${k}')" onmouseleave="ldHover()">${n}</div>`
+        : `<div class="pl" draggable="true" onmouseenter="ldHover(this,'${k}')" onmouseleave="ldHover()" ondragstart="ldStart({key:'${k}'})" ondragend="if(L.drag){L.drag=null;ld()}">${n}</div>`).join('')}</div>`).join(''))}
+      ${card('画板', `<div class="lz">${ldZone('top', 1)}<div class="row">${ldZone('left')}${ldZone('p1')}${ldZone('p2')}${ldZone('right')}</div>${ldZone('bottom', 1)}</div>`)}
+      ${card('属性', ldProps())}</div>`}</div>`;
+}
+function ld() { ldHover(); const e = document.getElementById('ld'); if (e) e.outerHTML = ldView(); }
+function ldStart(d) { ldHover(); L.drag = d; document.querySelectorAll('#ld .dz').forEach(z => z.classList.add(PLUG[d.key][1].includes(z.dataset.k) ? 'ok' : 'no')); }
+function ldDrop(k, at) {
+  const d = L.drag; if (!d || !PLUG[d.key][1].includes(k)) return; L.drag = null; // 画布嵌在面板内，不接收时交给外层面板
+  if (!d.from && ldUsed(d.key)) return ld();
+  const [type, v] = d.key.split(':');
+  const p = d.from ? L.r[d.from[0]].splice(d.from[1], 1)[0] : LS[type] ? ldNewLs(type) : { type, ...(v ? { v } : {}), ...(['InfoPanel', 'FileList', 'ItemList', 'RecordForm', 'DataTable'].includes(type) ? { title: PLUG[d.key][0] } : {}) };
+  if (at === undefined) at = L.r[k].length; else if (d.from && d.from[0] === k && d.from[1] < at) at--;
+  L.r[k].splice(at, 0, p); L.sel = [k, at]; ld();
+}
+let ldTimer;
+function ldHover(el, k) {
+  clearTimeout(ldTimer); document.getElementById('ld-pv')?.remove(); if (!el) return;
+  ldTimer = setTimeout(() => { const r = el.getBoundingClientRect(), d = document.createElement('div');
+    d.id = 'ld-pv'; d.className = 'pv'; d.innerHTML = `<span class="note">${PLUG[k][0]} · <span class="m">${k}</span></span>${ldPreview(k)}`;
+    document.body.append(d); Object.assign(d.style, { left: r.right + 8 + 'px', top: Math.max(8, Math.min(r.top, innerHeight - d.offsetHeight - 8)) + 'px' }); }, 1000);
+}
+const PV_DOC = inner => `<div class="doc" style="width:150px;padding:10px;gap:5px"><div class="tt" style="font-size:10px">企业设立登记申请书</div>${'<div class="ln" style="height:4px"></div>'.repeat(5)}${inner || ''}</div>`;
+function ldPreview(k) {
+  const [type, v] = k.split(':'), lab = PLUG[k][0], box = (c, t, st) => `<div class="box" style="--b:${c};${st}"><span>${t}</span></div>`;
+  if (type === 'Button') return `<div class="bar"><button class="btn sm${v === 'submit' ? ' pri' : ''}">${lab}</button></div>`;
+  if (type === 'Status') return `<div class="wbot" style="border:1px solid var(--line);border-radius:4px">${{ required: '必填 <b class="m">3/6</b>', page: '企业设立登记申请书 · 1/4', zoom: '<span class="m">90° · 80%</span>', log: '日志 <b class="m">12</b>' }[v]}</div>`;
+  const P = {
+    Spacer: '<div class="bar"><button class="btn sm">撤销</button><span style="flex:1;border-top:1px dashed var(--faint)"></span><button class="btn sm">保存</button></div>',
+    InfoPanel: '<dl class="kv" style="grid-template-columns:40px 1fr"><dt>档号</dt><dd class="m">Q012-2026-0815</dd><dt>年度</dt><dd>2026</dd></dl>',
+    FileList: '<div class="tree"><a class="on">1. 企业设立登记申请书</a><a>2. 公司章程</a></div>',
+    ItemList: '<div class="tree"><a><span class="m">seal-0131.jpg</span> <span style="color:var(--ok)">✓</span></a><a class="on"><span class="m">seal-0132.jpg</span></a></div>',
+    RecordForm: '<label class="fld" style="margin:0"><span><b>*</b>主体名称<button class="ocr">⌗ 框选</button></span><input class="inp" value="四川星辰信息技术有限公司"></label><label class="fld" style="margin:0"><span>申请日期</span><input class="inp" value="2026-08-11"></label>',
+    DataTable: T(['序号', '文件题名'], [['1', '企业设立登记申请书'], ['2', '公司章程']]),
+    ImageActions: '<div class="iact"><button>⟲ 左旋</button><button>⟳ 右旋</button><button>＋</button><button>－</button></div>',
+    Canvas: PV_DOC(), Image: PV_DOC(),
+    Text: '<p style="margin:0;line-height:1.7">根据《档案法》第十九条，本单位于 2026 年 8 月完成文书档案移交。</p>',
+    HyperText: '<div style="border:1px solid var(--line);border-radius:4px;padding:8px"><b>通知</b><p style="margin:4px 0 0">请于 <u>11 月 1 日</u>前完成整理。</p></div>',
+    Audio: `<div class="bar" style="gap:2px;align-items:center">▶ ${[6, 14, 9, 18, 7, 12, 16, 5, 11, 15, 8, 13].map(h => `<i style="width:4px;height:${h}px;background:var(--accent);display:inline-block"></i>`).join('')}</div>`,
+    Video: '<div style="aspect-ratio:16/9;background:#1d232b;border-radius:4px;display:grid;place-items:center;color:#fff">▶</div>',
+    Paragraphs: '<div class="chat" style="gap:6px"><div class="msg a" style="padding:4px 8px">甲：档案已经扫描完了吗？</div><div class="msg u" style="padding:4px 8px">乙：完成，待质检。</div></div>',
+    Rectangle: PV_DOC(box('#2b61a3', '', 'left:12%;top:8%;width:76%;height:12%')),
+    RectangleLabels: `<div class="bar">${S('印章', 'err')}${S('签名', 'ac')}</div>` + PV_DOC(box('#b8403a', '印章', 'left:55%;top:60%;width:32%;height:24%')),
+    PolygonLabels: '<svg viewBox="0 0 150 90" style="width:150px;background:var(--paper);border-radius:4px"><polygon points="20,15 120,10 135,70 30,80" fill="rgb(43 97 163 / .15)" stroke="#2b61a3" stroke-width="1.5"/></svg>',
+    KeyPointLabels: '<svg viewBox="0 0 150 90" style="width:150px;background:var(--paper);border-radius:4px">' + [[20, 15], [130, 12], [132, 78], [18, 75]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" fill="#b8403a"/>`).join('') + '</svg>',
+    BrushLabels: '<svg viewBox="0 0 150 90" style="width:150px;background:var(--paper);border-radius:4px"><path d="M20 60 C 50 20, 80 80, 130 30" stroke="rgb(168 104 11 / .6)" stroke-width="12" fill="none" stroke-linecap="round"/></svg>',
+    Labels: `<p style="margin:0;line-height:1.9"><span style="background:var(--accent-soft);color:var(--accent)">张明</span> 于 <span style="background:var(--warn-soft);color:var(--warn)">2026 年 8 月</span> 向 <span style="background:var(--ok-soft);color:var(--ok)">成华区市场监管局</span> 提交申请。</p>`,
+    Choices: '<div style="display:flex;flex-direction:column;gap:2px">' + ['公开', '内部', '秘密'].map((o, i) => `<label class="chk" style="padding:0"><input type="radio"${i ? '' : ' checked'}>${o}</label>`).join('') + '</div>',
+    Taxonomy: '<div class="tree"><a>▾ 文书</a><a class="l2 on">通知</a><a class="l2">请示</a><a>▸ 科技</a></div>',
+    TextArea: '<textarea class="inp" rows="2">关于开展档案数字化质量检查的通知</textarea>',
+    Number: '<input class="inp" type="number" value="30">',
+    DateTime: '<input class="inp" type="date" value="2026-08-11">',
+    Rating: '<span style="color:var(--warn);font-size:16px;letter-spacing:2px">★★★★☆</span>',
+    Header: '<b style="font-size:14px">标题</b>',
+  };
+  return P[type] || '';
+}
+function ldNewLs(type) {
+  const [, kind, attrs = {}, opts] = LS[type], names = L.r.cv.map(p => p.attrs?.name), base = type.toLowerCase();
+  let n = 1; while (names.includes(n > 1 ? `${base}_${n}` : base)) n++;
+  return { type, attrs: { ...(kind === 'vis' ? {} : { name: n > 1 ? `${base}_${n}` : base }), ...(kind === 'ctl' ? { toName: lsObjs()[0] || '' } : {}), ...attrs }, ...(opts ? { opts } : {}) };
+}
+function ldAttr(k, v) { L.r.cv[L.sel[1]].attrs[k] = v; ld(); }
+function ldMode(m) {
+  if (m === 'design' && L.mode === 'xml') { const x = document.getElementById('ld-xml').value;
+    try { ldParse(x); L.err = ''; L.xml = null; } catch (e) { L.err = e.message; L.xml = x; return ld(); } }
+  L.mode = m; L.sel = null; ld();
+}
 
 const CRUMB = {
   users: '认证 / <b>身份账号</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
   kb: '能力 / <b>知识库</b>', 'kb-detail': '能力 / 知识库 / <b>档案业务规范库</b>', agents: '能力 / <b>Agent</b>', 'agent-detail': '能力 / Agent / <b>档案问答助手</b>',
-  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
+  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', 'anno-layout': '数据 / 场景模板 / <b>企业登记著录 · 布局</b>', 'label-form': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>企业登记档案著录</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
   'ar-home': '<b>工作台</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',
   'ar-import': '<b>档案导入</b>', 'ar-batch': '档案导入 / <b>IMP-20241026-03</b>', 'ar-send': '档案导入 / IMP-20241026-03 / <b>送标注</b>', 'ar-writeback': '档案导入 / IMP-20241026-03 / <b>回写确认</b>', 'ar-label': '<b>标注任务</b>', 'ar-roles': '系统 / <b>角色与权限</b>',
 };

@@ -39,6 +39,8 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [数据标注](docs/platform/annotation/overview.md) | 标注模块总览 | 模块边界、分配标注（任务池 / 指定用户）与自由标注、平台用户与权限、核心对象、状态机、分期 | 部分实现 |
 | [Label Studio 集成与语言](docs/platform/annotation/labelstudio.md) | 编辑器如何构建、嵌入、汉化 | 源码构建、嵌入接口、汉化来源、平台级中英文控制 | 部分实现 |
 | [场景模板](docs/platform/annotation/templates.md) | 标注界面如何自定义 | 模板组成、参数与映射、内置场景库、自定义与版本 | 部分实现 |
+| [工作台布局与插件](docs/platform/annotation/layout.md) | 标注工作台如何布局与扩展 | 可嵌套布局容器、XML 与拖拽设计器（含 Label Studio 原生标签）、按钮 / 著录表单 / 数据表格组件、JSON / YAML 导出、组件联动 | 部分实现 |
+| [工作台组件](docs/platform/annotation/components/README.md) | 工作台组件怎么用 | 工作台、网格、列表、面板、表单、数据表格、按钮栏、按钮、间隔、画布、布局设计器：演示、生命周期、属性、事件、方法；组件分工与去重 | 部分实现 |
 | [业务系统对接](docs/platform/annotation/integration.md) | 业务如何嵌入标注与收发数据 | 页面嵌入、海量数据引用模式、清单分片、接口、事件、时序 | 设计中 |
 | [数据采集](docs/platform/ingest.md) | 外部数据与现场硬件如何进入平台 | 连接器、原始区、edge-agent 上报与指令 | 设计中 |
 | [定时任务与异步处理](docs/platform/scheduler.md) | 长任务、定时任务如何执行 | PG 任务表、Worker、队列并发、重试超时幂等 | 部分实现 |
@@ -74,7 +76,7 @@ open docs/design/prototype.html#ar-import
 | 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
 | 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口） |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
-| 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（bucket `kaifang-meta-platform`）、etcd 2379、APISIX 9080 / 9180 |
+| 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444、S3 API 9445）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181） |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |
 | 端口 | 前端 3001，后端 8080 |
 | 前端规范 | 设计语言统一为 nova-admin 风格，优先复用其组件，见 skill [kaifang-meta-ui](.agents/skills/kaifang-meta-ui/SKILL.md) |
@@ -89,11 +91,12 @@ sh start-service.sh
 
 脚本依次：生成 `.env`（如缺失，并生成各签名密钥）→ 停止上次启动的后端、worker 与前端 → 释放被占用的端口（停止其他容器或进程）→ 启动基础设施并重载网关插件 → 创建 bucket → `alembic upgrade head` → 源码启动后端（启动时下发网关路由）、worker 与前端。运行 `sh stop-service.sh` 可停止这三个进程；基础设施可在仓库根目录执行 `docker compose --project-directory . -f docker/docker-compose.yml down` 停止。
 
-浏览器只访问前端 3001：`/kaifang-meta/*` 由 Vite 代理到 APISIX，登录、Token、控制台 API 与生产链路一致。Token 只存内存，到期前 2 分钟自动续期，刷新页面经 `prompt=none` 静默恢复。
+浏览器访问前端 3001：`/kaifang-meta/*` 由 Vite 代理到 APISIX，登录、Token、控制台 API 与生产链路一致。Token 只存内存，到期前 2 分钟自动续期，刷新页面经 `prompt=none` 静默恢复。局域网通过 IP 访问时必须启用 HTTPS（浏览器仅在安全上下文提供 PKCE 所需的 WebCrypto），并在访问设备上信任证书；同时将 `VITE_HTTPS=true`、`IAM_COOKIE_SECURE=true`，将 IP 对应的 HTTPS 回调地址加入 `.env` 中 `CONSOLE_REDIRECT_URIS` 与 `CONSOLE_POST_LOGOUT_REDIRECT_URIS`，重启服务。HTTPS 模式也会启用 MinIO（默认端口 9444）与 APISIX Dashboard（默认端口 9181）的 TLS 反代；APISIX Dashboard 在每台浏览器首次打开时需在 Settings 中填入 `.env` 的 `APISIX_ADMIN_KEY`。
 
 | 地址 | 说明 |
 |------|------|
 | http://localhost:3001 | 控制台，默认账号 `admin` / `123456`（`.env` 中 `CONSOLE_ADMIN_*`） |
+| https://localhost:3001 | 启用 `VITE_HTTPS=true` 后的控制台地址 |
 | http://localhost:8080/docs | 后端 API 文档（直连后端没有网关身份头，鉴权接口会返回 401） |
 | http://localhost:9080/kaifang-meta/iam/.well-known/openid-configuration | OIDC 发现文档 |
 | http://localhost:9001 | MinIO 控制台 |

@@ -28,9 +28,9 @@
 |------|------|------|
 | 标注工单 | `/annotation/task` | 工单列表、新建工单（名称 + 场景模板，建单时快照模板 XML） |
 | 工单详情 | `/annotation/task-detail?id=` | 工单信息、上传数据（图像 / 视频 / 音频 / UTF-8 文本）、条目列表、开始标注 |
-| 标注工作台 | `/annotation/workbench?task_id=` | Label Studio 画布，上一份 / 下一份、提交并下一份，已标注条目回显结果 |
+| 标注工作台 | `/annotation/workbench?task_id=` | 按模板布局渲染（[工作台组件](components/README.md)）：撤销 / 重做、上一份 / 下一份、查看数据与 JSON / YAML 导出、保存草稿、提交并下一份，已标注条目回显结果 |
 | 场景模板 | `/annotation/template` | 内置 6 个系统模板，新建、编辑或预览 |
-| 模板编辑 | `/annotation/template-edit?id=` | 左侧模板信息与 XML 编辑器（CodeMirror，高亮 + Label Studio 标签 / 属性补全）；右侧带边框的预览区，铺满可用空间，窄于 1280px 时等比缩小，XML 不合法时只提示错误 |
+| 模板编辑 | `/annotation/template-edit?id=` | 左侧模板信息与 XML 编辑器（CodeMirror，高亮 + Label Studio 标签 / 属性补全）；右侧带边框的预览区，铺满可用空间，窄于 1280px 时等比缩小，XML 不合法时只提示错误；标题旁按钮组切换「XML / 布局 / 预览」：布局为拖拽布局设计器，预览按实际尺寸渲染工作台 |
 
 与本文目标设计的差异：
 

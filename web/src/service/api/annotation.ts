@@ -39,6 +39,6 @@ export function fetchAnnotationItemPage(params: Page & { task_id: number, status
 export function fetchAnnotationWorkItem(task_id: number, id?: number) {
   return request.Get<Service.ResponseResult<Entity.AnnotationWorkItem>>('/annotation/item/get', { params: id ? { task_id, id } : { task_id } })
 }
-export function fetchSaveAnnotationItem(data: { id: number, result: Record<string, unknown>[] }) {
+export function fetchSaveAnnotationItem(data: { id: number, result: Record<string, unknown>[], draft?: boolean }) {
   return request.Post<Service.ResponseResult<null>>('/annotation/item/save', data)
 }

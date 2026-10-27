@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { FormInst, FormRules } from 'naive-ui'
 import { useThemeVars } from 'naive-ui'
-import AnnotationCanvas from '@/components/custom/AnnotationCanvas.vue'
 import { checkTemplateXml } from '@/components/custom/label-studio-schema'
+import { checkLayout, parseLayout } from '@/components/custom/workbench/layout'
+import LayoutDesigner from '@/components/custom/workbench/LayoutDesigner.vue'
+import Workbench from '@/components/custom/workbench/Workbench.vue'
 import XmlEditor from '@/components/custom/XmlEditor.vue'
 import { usePermission } from '@/hooks'
 import { fetchAnnotationTemplate, fetchCreateAnnotationTemplate, fetchUpdateAnnotationTemplate } from '@/service'
@@ -23,14 +25,12 @@ const form = ref<Partial<Entity.AnnotationTemplate>>({
   code: '',
   modality: 'image',
   // 编辑已有模板时留空，避免加载前先渲染默认模板
-  config: route.query.id ? '' : `<View>
-  <Image name="image" value="$image" zoom="true"/>
-  <RectangleLabels name="label" toName="image">
-    <Label value="目标" background="#2080f0"/>
-  </RectangleLabels>
-</View>`,
+  config: route.query.id ? '' : '<Workbench/>',
 })
 const readonly = ref(false)
+// XML 与布局两种方式编辑同一份 config；布局模式下设计器占满页面
+const mode = ref<'xml' | 'layout' | 'preview'>(route.query.id ? 'xml' : 'layout')
+const MODES = [['xml', 'XML'], ['layout', '布局'], ['preview', '预览']] as const
 const rules: FormRules = {
   name: { required: true, message: '请输入模板名称', trigger: 'blur' },
   code: { required: true, pattern: /^[a-z][a-z0-9._-]*$/, message: '小写字母开头，可含数字 . _ -', trigger: 'blur' },
@@ -78,6 +78,15 @@ async function submit() {
   await formRef.value?.validate()
   if (!form.value.config?.trim())
     return message.warning('请输入模板 XML')
+  let layoutError = ''
+  try {
+    layoutError = checkLayout(parseLayout(form.value.config))
+  }
+  catch (e) {
+    layoutError = (e as Error).message
+  }
+  if (layoutError)
+    return message.warning(`模板布局有误：${layoutError}`)
   loading.value = true
   const { id, name, code, modality, config } = form.value
   const res = id
@@ -96,10 +105,19 @@ onMounted(load)
 <template>
   <n-flex :wrap="false" class="h-full min-h-0" :size="16">
     <n-card
-      class="w-2/5 min-w-100 max-w-150 shrink-0"
+      :class="mode === 'xml' ? 'w-2/5 min-w-100 max-w-150 shrink-0' : 'min-w-0 flex-1'"
       content-class="flex min-h-0 flex-col gap-3"
-      :title="form.id ? `${form.code}@${form.version}` : '新建模板'"
     >
+      <template #header>
+        <n-space align="center" :size="16">
+          <span>{{ form.id ? `${form.code}@${form.version}` : '新建模板' }}</span>
+          <n-button-group>
+            <n-button v-for="[k, label] in MODES" :key="k" :type="mode === k ? 'primary' : 'default'" @click="mode = k">
+              {{ label }}
+            </n-button>
+          </n-button-group>
+        </n-space>
+      </template>
       <template #header-extra>
         <n-space>
           <n-button @click="back">
@@ -123,10 +141,14 @@ onMounted(load)
           </n-form-item-gi>
         </n-grid>
       </n-form>
-      <XmlEditor v-model="form.config" :readonly="readonly" class="min-h-0 flex-1" />
+      <XmlEditor v-if="mode === 'xml'" v-model="form.config" :readonly="readonly" class="min-h-0 flex-1" />
+      <LayoutDesigner v-else-if="mode === 'layout' && form.config" v-model="form.config" :readonly="readonly" class="flex-1" />
+      <div v-else-if="mode === 'preview'" class="min-h-0 flex-1 overflow-hidden border border-solid rounded" :style="{ borderColor: themeVars.borderColor }">
+        <Workbench v-if="form.config" :config="form.config" :data="sampleData" :item="{ name: '样例', index: 1, total: 1 }" preview />
+      </div>
     </n-card>
 
-    <n-card title="预览" class="min-w-0 flex-1" content-class="flex min-h-0 flex-col">
+    <n-card v-show="mode === 'xml'" title="预览" class="min-w-0 flex-1" content-class="flex min-h-0 flex-col">
       <n-alert v-if="xmlError" type="error" :show-icon="false" class="mb-3">
         {{ xmlError }}
       </n-alert>
@@ -139,7 +161,7 @@ onMounted(load)
           class="absolute left-0 top-0 origin-top-left"
           :style="{ width: `${stage.width}px`, height: `${stage.height}px`, transform: `scale(${scale})` }"
         >
-          <AnnotationCanvas v-if="previewConfig && !xmlError" :config="previewConfig" :data="sampleData" />
+          <Workbench v-if="previewConfig && !xmlError" :config="previewConfig" :data="sampleData" :item="{ name: '样例', index: 1, total: 1 }" preview />
         </div>
       </div>
     </n-card>
