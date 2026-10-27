@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `README.md` — 入口：总体拆分摘要 + 文档目录（每个文档的作用见此处，不在本文件重复）+ 控制台代码启动说明
 - `app/iam/` — 认证模块（独立 `iam` schema）；`app/domains/` — 控制台后端业务域（用户、授权、审计、账号、事件，使用 `console_authz` schema）；业务组织由各业务系统维护；`app/core/`、`app/models/base.py`、`app/schemas/base.py` — 跨域公共能力；控制台只信任网关签名身份头、按 `sub` 关联本地用户；`app/api/v1/` — 路由聚合入口；`run.py`、`pyproject.toml`、`uv.lock` — 后端入口与本地依赖；`app/worker.py` — kaifang-meta-platform-worker（事件分发）；`web/` — 控制台前端（nova-admin）；`alembic/` — 数据库迁移与 seed；`docker/` — Dockerfile、Compose、镜像依赖清单、入口脚本、APISIX 与 Nginx 配置
 - 唯一配置入口是根目录 `.env`（模板 `.env.example`）；一键启动 `sh start-service.sh`；表结构只经 alembic 变更
-- `docs/*.md` — 总体与跨部署段设计；`docs/platform/` — 按平台模块拆分（`auth/`、`capability/`、数据与调度）
+- `docs/*.md` — 总体与跨部署段设计；`docs/platform/` — 按平台模块拆分（`auth/`、`capability/`、`annotation/`、数据与调度）
 - `docs/design/architecture.html` — 系统架构图，纯 HTML/CSS（无 JS），上中下结构：接入端 → [独立进程 | 网关 + 平台模块 | 业务系统] → 平台基础设施，颜色块与带标注箭头表示角色与调用方向
 - `docs/design/prototype.html` — 单文件、hash 路由的高保真静态原型（平台控制台 + 智慧档案室），所有数据均为示例数据
 
@@ -32,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 认证模块只维护登录账号、认证凭据、全局唯一 `sub`、账号状态与 SSO；**业务系统维护本地用户资料、组织、角色、菜单和数据权限**，按 `sub` 关联本地用户。已有企业 IdP / LDAP 时优先复用，不复制身份主数据。
 - 权限是「一套组件，多份数据」：SDK 统一权限组件（RBAC）由平台控制台（内置应用 `kaifang-meta-console`，数据在 `console_authz`）和业务系统共用，数据各存本系统；不建中心授权服务，Token 不带角色权限。
 - 能力是统一目录：算子、流水线、模型、知识库、Agent 都是能力；能力模块是控制面，AI 模块 / 算子节点 / 任务调度是提供方。能力经应用空间下放给业务系统。
-- 数据标注是平台模块，不是业务系统：只嵌入 Label Studio 编辑器组件做画布（不部署 Label Studio 服务），工单、分配、质检、存储自建；入口在业务系统，打开平台托管的标注工作台，标注员 / 质检员由工单成员指定而非控制台角色。
+- 数据标注是平台模块，不是业务系统：只嵌入从源码构建并汉化的 Label Studio 编辑器做画布（不部署 Label Studio 服务），海量文件默认引用业务存储、由业务签发下载地址，工单、分配、质检、存储自建；支持分配标注（任务池领取 / 指定用户）与自由标注；参与者都是平台身份账号，业务入口打开的工作台按工单成员授权；编辑器中英文由平台设置控制。
 - 核心演示流程「导入 → 解析与预抽取 → 送标注 → 标注 → 质检回传 → 回写确认」跨越智慧档案室与中台；幂等键为「批次号 + 档号」，标注期间档案只读。
 
 # UI设计

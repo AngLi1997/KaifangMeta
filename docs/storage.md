@@ -31,8 +31,10 @@ kaifang-meta-platform/{业务目录}/{tenant_id}/{归属}/{业务自定义层级
 |----------|----------|------|------|------|
 | `console` | 平台控制台 | `console/{tenant_id}/avatars/{sub}` | 用户头像 | 随用户删除 |
 | `capability` | 能力 | `capability/{tenant_id}/{client_id}/runs/{run_id}/input/…`、`…/output/…` | 能力调用的输入副本与大结果 | 运行结束后 30 天 |
-| `annotation` | 数据标注 | `annotation/{tenant_id}/{client_id}/staging/{batch_no}/…` | 建单前上传的清单与送标注文件 | 建单后 7 天 |
-| | | `annotation/{tenant_id}/{client_id}/tasks/{task_id}/…` | 送标注数据、标注快照 | 业务 `ack` 后 90 天 |
+| `annotation` | 数据标注 | `annotation/{tenant_id}/{client_id}/tasks/{task_id}/manifest/{part_no}.jsonl.gz` | 清单分片 | 建单后 7 天 |
+| | | `annotation/{tenant_id}/{client_id}/tasks/{task_id}/files/…` | 副本模式的送标注文件 | 业务 `ack` 后 90 天 |
+| | | `annotation/{tenant_id}/{client_id}/tasks/{task_id}/{pages,tiles,media}/{item_key}/…` | 预处理派生文件（页图、瓦片、转码） | 业务 `ack` 后 90 天 |
+| | | `annotation/{tenant_id}/{client_id}/tasks/{task_id}/exports/v{ver}.jsonl.gz` | 结果导出 | 业务 `ack` 后 90 天 |
 | `ai` | AI | `ai/{tenant_id}/{space}/kb/{kb}/docs/{external_id}/…` | 知识库文本副本（WeKnora 写入；全文库只存文本，不存原件） | 随文档删除 |
 | `ingest` | 数据采集 | `ingest/{tenant_id}/{connector或device}/{yyyy/mm/dd}/…` | 采集原始区 | 按连接器配置 |
 | `jobs` | 任务调度 | `jobs/{tenant_id}/{job_id}/{step}/{item_key}` | 流水线步骤的大结果 | 任务结束后 30 天 |
@@ -63,6 +65,6 @@ mc ilm rule add --prefix "capability/" --expire-days 30 local/kaifang-meta-platf
 | 档案员上传原件 | 智慧档案室对象存储 `archive-files/{tenant}/{batch}/{doc_no}.pdf` |
 | 送解析 | 复制到 `capability/{tenant}/kaifang-meta-archive-room/runs/{run_id}/input/` |
 | 预抽取结果 | 平台 `capability` schema（小结果）/ `capability/…/output/`（大结果）→ 业务拉回存业务库 |
-| 送标注 | 清单先传 `annotation/{tenant}/kaifang-meta-archive-room/staging/{batch_no}/manifest.jsonl`，建单后进入 `annotation/{tenant}/kaifang-meta-archive-room/tasks/{task_id}/` |
+| 送标注 | 默认引用模式：原件留在档案室存储，平台只存清单分片 `annotation/{tenant}/kaifang-meta-archive-room/tasks/{task_id}/manifest/` 与页图 `…/pages/`；标注员浏览器经平台 302 直接从档案室存储取文件 |
 | 回写确认 | 著录版本写业务库；`ack` 后平台副本进入保留期 |
 | 全文入库 | 业务推送到 `ai/{tenant}/space.archive-room/kb/archive-fulltext/…`，带 ACL 元数据 |

@@ -1,6 +1,6 @@
 # 知识库与 Agent 引擎（WeKnora）
 
-> 平台 · AI 模块的提供方，独立进程 `kaifang-meta-weknora` + `kaifang-meta-docreader`。相关：[知识库与 Agent 版本](knowledge-agent.md)、[能力目录](catalog.md)、[数据标注](../annotation.md)、[对象存储路径](../../storage.md)、[Agent 桌面端](../../harness.md)。
+> 平台 · AI 模块的提供方，独立进程 `kaifang-meta-weknora` + `kaifang-meta-docreader`。相关：[知识库与 Agent 版本](knowledge-agent.md)、[能力目录](catalog.md)、[数据标注](../annotation/overview.md)、[对象存储路径](../../storage.md)、[Agent 桌面端](../../harness.md)。
 
 ## 要点
 
@@ -10,7 +10,7 @@
 - **界面自建，不嵌入 WeKnora 网页**：控制台知识库 / Agent 管理页、业务内嵌问答面板、平台托管的网页版 Agent 均为 nova-admin 风格自建页面，调用 AI 模块的 SSE 接口；WeKnora 自带 Web UI 只在运维内网用于调试解析与检索效果。
 - **海量档案不让 WeKnora 重复 OCR**：原件留在智慧档案室对象存储；平台流水线解析出的全文（按页 Markdown）+ ACL 元数据以文本方式写入 WeKnora，只有制度规范等小批量文件才直接上传让 docreader 解析。
 - **权限靠分区 + 后置校验**：WeKnora 不理解业务权限，强制过滤字段（全宗、密级）映射为 WeKnora 知识库分区，检索与 Agent 会话只放行有权分区，返回结果再按元数据二次校验。
-- **Label Studio 只做标注画布**：沿用 [数据标注](../annotation.md) 的嵌入编辑器方案；标注回写确认后的档案才进入全文知识库，问答评测集也用标注工单产出。
+- **Label Studio 只做标注画布**：沿用 [数据标注](../annotation/overview.md) 的嵌入编辑器方案；标注回写确认后的档案才进入全文知识库，问答评测集也用标注工单产出。
 
 ## 定位与部署
 
@@ -153,7 +153,7 @@ event: done        data: {"usage":{"prompt_tokens":2310,"completion_tokens":412}
 
 | 场景 | 做法 |
 |------|------|
-| 著录项校对 | 已有流程，见 [数据标注](../annotation.md)；回写确认是全文入库的前置条件 |
+| 著录项校对 | 已有流程，见 [数据标注](../annotation/overview.md)；回写确认是全文入库的前置条件 |
 | 问答评测集 | 控制台对知识库 / Agent 建标注工单，模板为「问题 + 期望引用档号 + 参考答案」，结果版本即评测集版本，用于发布前回归 |
 | 回答质量反馈 | 用户点「不满意」的会话按天抽样生成标注工单，质检通过后进入评测集，可用于调整提示词或切片配置 |
 

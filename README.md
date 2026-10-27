@@ -36,7 +36,10 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [知识库与 Agent 版本](docs/platform/capability/knowledge-agent.md) | 知识库 / Agent 如何发布回滚 | 不可变快照、`prod` 别名、评测回归 | 设计中 |
 | [知识库与 Agent 引擎（WeKnora）](docs/platform/capability/weknora.md) | 如何用 WeKnora 承载知识库与网页版 Agent | 部署与对象映射、海量档案导入与存储、分区权限、自建界面、与标注的关系 | 设计中 |
 | **平台 · 数据与调度** | | | |
-| [数据标注](docs/platform/annotation.md) | 核心演示流程的标注环节 | 选型（嵌入 Label Studio 编辑器）、业务入口与工作台、导入 → 标注 → 回写、工单状态机、接口、事件 | 设计中 |
+| [数据标注](docs/platform/annotation/overview.md) | 标注模块总览 | 模块边界、分配标注（任务池 / 指定用户）与自由标注、平台用户与权限、核心对象、状态机、分期 | 设计中 |
+| [Label Studio 集成与语言](docs/platform/annotation/labelstudio.md) | 编辑器如何构建、嵌入、汉化 | 源码构建、嵌入接口、汉化来源、平台级中英文控制 | 设计中 |
+| [场景模板](docs/platform/annotation/templates.md) | 标注界面如何自定义 | 模板组成、参数与映射、内置场景库、自定义与版本 | 设计中 |
+| [业务系统对接](docs/platform/annotation/integration.md) | 业务如何嵌入标注与收发数据 | 页面嵌入、海量数据引用模式、清单分片、接口、事件、时序 | 设计中 |
 | [数据采集](docs/platform/ingest.md) | 外部数据与现场硬件如何进入平台 | 连接器、原始区、edge-agent 上报与指令 | 设计中 |
 | [定时任务与异步处理](docs/platform/scheduler.md) | 长任务、定时任务如何执行 | PG 任务表、Worker、队列并发、重试超时幂等 | 部分实现 |
 | **客户端与分发** | | | |

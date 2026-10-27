@@ -41,7 +41,11 @@ platform_access:                # 本应用的服务账号可调用的平台能�
 
 events:
   endpoint: https://archive.internal/kaifang-meta/events
-  subscribe: [user.*, annotation.task.*, capability.binding.changed]
+  subscribe: [user.*, annotation.*, capability.binding.changed]
+
+annotation:                     # 使用数据标注时填写，见 数据标注
+  file_resolver: https://archive.internal/kaifang-meta/annotation/files:resolve   # 引用模式的文件签发接口
+  embed_origins: [https://archive.internal]                                        # 允许 iframe 嵌入标注页面的来源
 
 portal:
   icon: archive

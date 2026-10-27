@@ -29,7 +29,7 @@
 | 能力 | [能力目录与下放](platform/capability/catalog.md)、[能力点](platform/capability/binding.md)、[算子](platform/capability/operator.md) |
 | AI | [知识库与 Agent 版本](platform/capability/knowledge-agent.md)、[知识库与 Agent 引擎（WeKnora）](platform/capability/weknora.md) |
 | 数据采集 | [数据采集](platform/ingest.md) |
-| 数据标注 | [数据标注](platform/annotation.md) |
+| 数据标注 | [数据标注](platform/annotation/overview.md) |
 | 任务调度 | [定时任务与异步处理](platform/scheduler.md) |
 
 ## 跨段设计

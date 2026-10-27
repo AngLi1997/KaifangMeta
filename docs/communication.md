@@ -1,6 +1,6 @@
 # 业务与平台通信
 
-> 跨部署段：业务系统 ↔ 网关 ↔ 平台。相关：[多应用设计](apps.md)、[网关与鉴权](gateway.md)、[鉴权流程](auth-flow.md)、[多节点部署](deployment.md)、[数据标注](platform/annotation.md)、[能力点](platform/capability/binding.md)。
+> 跨部署段：业务系统 ↔ 网关 ↔ 平台。相关：[多应用设计](apps.md)、[网关与鉴权](gateway.md)、[鉴权流程](auth-flow.md)、[多节点部署](deployment.md)、[数据标注](platform/annotation/overview.md)、[能力点](platform/capability/binding.md)。
 
 ## 要点
 
@@ -47,7 +47,7 @@
 
 ## 端到端流程：导入 → 回写确认
 
-以智慧档案室为例，串起[数据标注](platform/annotation.md)工作流中的六个步骤。
+以智慧档案室为例，串起[数据标注](platform/annotation/overview.md)工作流中的六个步骤。
 
 ```mermaid
 sequenceDiagram

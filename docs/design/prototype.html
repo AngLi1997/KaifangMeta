@@ -234,15 +234,15 @@ function capFilter(a, k, v) {
 const PLATFORM_NAV = [
   ['认证', [['users', '身份账号'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
   ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型']]],
-  ['数据', [['ingest', '数据采集'], ['label', '数据标注']]],
-  ['运维', [['jobs', '任务调度'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['etcd', 'http://localhost:9010']]]]],
+  ['数据', [['ingest', '数据采集'], ['label', '标注工单'], ['anno-mine', '我的标注', '3'], ['anno-tpl', '场景模板']]],
+  ['运维', [['jobs', '任务调度'], ['settings', '平台设置'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['etcd', 'http://localhost:9010']]]]],
 ];
 const ARCHIVE_NAV = [
   ['业务', [['ar-home', '工作台'], ['ar-list', '档案管理', '1,284'], ['ar-import', '档案导入', '2'], ['ar-label', '标注任务', '1'], ['ar-qa', '智能问答']]],
   ['系统', [['ar-roles', '角色与权限']]],
 ];
 const PARENT = { 'op-ocr': 'caps', 'kb-detail': 'kb', 'agent-detail': 'agents', 'ar-detail': 'ar-list',
-  'ar-batch': 'ar-import', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
+  'ar-batch': 'ar-import', 'anno-task': 'label', 'anno-new': 'label', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
 // 导入 → 标注 → 回写 跨系统工作流
 const FLOW = [['ar-import', '导入', '智慧档案室'], ['ar-batch', '解析与预抽取', '智慧档案室'], ['ar-send', '送标注', '智慧档案室'],
   ['label-work', '标注', '中台 · 标注工作台'], ['label-review', '质检回传', '中台 · 标注工作台'], ['ar-writeback', '回写确认', '智慧档案室']];
@@ -253,7 +253,7 @@ function topbar(mark, name, crumb) {
   return `<header class="top">
     <a class="brand" href="#portal"><span class="mark">${mark}</span>${name}</a>
     <div class="crumb">${crumb}</div><span class="sp"></span>
-    <a class="ic" href="#portal">应用</a><a class="ic" href="#jobs">消息 3</a>
+    <a class="ic" href="#settings">中 / EN</a><a class="ic" href="#portal">应用</a><a class="ic" href="#jobs">消息 3</a>
     <span class="ava">张</span></header>`;
 }
 function shell(kind, route, crumb, body) {
@@ -568,58 +568,114 @@ km.capability("archive.import.ocr").invoke(req, OcrResult.class);
       ['<span class="m">TH-07</span>', '温湿度传感器', '二号库房 C 区', '<span class="m">edge-store-02</span>', '<span class="m mu">08:41:10</span>', '212', D('离线 · 本地缓存中', 'err')],
     ]), true),
 
-  label: () => ph('数据标注', '','<button class="btn">标注模板</button><button class="btn pri">新建工单</button>') +
-    `<div class="bar"><div class="seg"><a class="on">全部 5</a><a>进行中 2</a><a>待质检 1</a><a>待业务确认 0</a><a>已关闭</a></div></div>` +
-    card('标注工单', T(['工单', '来源 · 外部引用', '数据集版本', '模板', '进度', '工单状态', '结果版本', ''], [
-      ['IMP-20241026-03 著录校对', S('智慧档案室', 'ac') + ' <span class="m mu">IMP-20241026-03</span>', '<span class="m">ds.imp-20241026-03@v1</span>', '<span class="m">archive.ws-item@4</span>', P(24), `${D('标注中', 'warn')} <span class="m mu">LABELING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
-      ['IMP-20241025-01 著录校对', S('智慧档案室', 'ac') + ' <span class="m mu">IMP-20241025-01</span>', '<span class="m">ds.imp-20241025-01@v1</span>', '<span class="m">archive.ws-item@4</span>', P(100), `${D('业务已确认', 'ok')} <span class="m mu">DELIVERED</span>`, '<span class="m">v2</span> <span class="note">72 采纳 · 2 拒收</span>', '<a class="btn ghost">详情</a>'],
-      ['印章检测样本', S('中台'), '<span class="m">ds.seal@v1</span>', '目标框选', P(100), `${D('质检中', '')} <span class="m mu">REVIEWING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
-      ['手写体识别训练集', S('中台'), '<span class="m">ds.hand@v1</span>', 'OCR 校对', P(71), `${D('标注中', 'warn')} <span class="m mu">LABELING</span>`, '<span class="mu">—</span>', '<a class="btn ghost">详情</a>'],
-      ['版面结构样本', S('中台'), '<span class="m">ds.layout@v3</span>', '区域分类', P(100), `${D('已关闭', 'ok')} <span class="m mu">CLOSED</span>`, '<span class="m">v3</span> <span class="note">已导出训练集</span>', '<a class="btn ghost">查看</a>'],
-    ]), true) +
-    `<div class="grid" style="grid-template-columns:1.1fr 1fr">
-      ${card('工单状态 · IMP-20241026-03', `<div class="grid" style="gap:14px">
-        <div class="bar">${[['CREATED', '已创建', 'done'], ['PREPARING', '准备快照', 'done'], ['READY', '待标注', 'done'], ['LABELING', '标注中', 'on'], ['REVIEWING', '质检中'], ['COMPLETED', '已完成'], ['DELIVERED', '业务已确认'], ['CLOSED', '已关闭']]
-          .map(([c, z, k], i) => (i ? '<span class="mu">→</span>' : '') + (k === 'on' ? S(z + ' · ' + c, 'warn') : k === 'done' ? S(z, 'ok') : S(z))).join('')}</div>
-        ${T(['条目状态', '数量', '说明'], [
-          [S('PENDING'), '<span class="m">52</span>', '待标注'],
-          [S('LABELED', 'ac'), '<span class="m">18</span>', '已提交，待抽检'],
-          [S('REJECTED', 'err'), '<span class="m">1</span>', '抽检退回返工'],
-          [S('FLAGGED', 'warn'), '<span class="m">3</span>', '问题件（缺页 / 无法辨认），已推送业务待办'],
-          [S('ACCEPTED', 'ok'), '<span class="m">0</span>', '质检通过'],
-        ])}
-        <dl class="kv"><dt>质检策略</dt><dd class="m">抽检 20% · 合格率 ≥ 98%</dd><dt>截止</dt><dd class="m">10-30 18:00</dd><dt>快照</dt><dd class="m">/t_5e2a9c1d7b3f4086/annotation/at_0c71/ · 保留 180 天</dd><dt>训练回流</dt><dd>${S('允许', 'ok')}</dd></dl></div>`)}
-      ${card('事件与回传', `<dl class="kv">
-        <dt>投递对象</dt><dd class="m">kaifang-meta-archive-room</dd>
-        <dt>拉取接口</dt><dd class="m">GET /annotation/v1/tasks/{id}/results?version=</dd>
-        <dt>回执接口</dt><dd class="m">POST …/results/{ver}/ack</dd>
-        <dt>补偿</dt><dd>SDK 每 10 分钟轮询“标注中”批次</dd></dl>
-        <div style="height:1px;background:var(--line);margin:12px 0"></div>
-        ${T(['时间', '事件', '投递'], [
-          ['<span class="m">10-26 10:02</span>', '<span class="m">annotation.task.accepted</span>', D('成功', 'ok')],
-          ['<span class="m">10-26 10:41</span>', '<span class="m">annotation.item.flagged</span> <span class="m mu">×3</span>', D('成功', 'ok')],
-          ['<span class="m">10-26 11:10</span>', '<span class="m">annotation.task.progress</span> <span class="m mu">20%</span>', D('重试 1 次后成功', 'warn')],
-        ])}`)}
+  label: () => ph('标注工单', '', '<a class="btn" href="#anno-tpl">场景模板</a><a class="btn pri" href="#anno-new">新建工单</a>') +
+    `<div class="bar"><div class="seg"><a class="on">全部 6</a><a>分配标注 4</a><a>自由标注 2</a></div><div class="seg"><a class="on">全部</a><a>标注中 3</a><a>质检中 1</a><a>待业务确认 0</a><a>已关闭</a></div></div>` +
+    card('标注工单', T(['工单', '方式', '来源', '模板', '条目', '进度', '状态', '结果', ''], [
+      ['IMP-20241026-03 著录校对', S('分配 · 混合'), S('智慧档案室', 'ac'), '<span class="m">archive.ws-item@4</span>', '<span class="m">74</span>', P(24), D('标注中', 'warn'), '<span class="mu">—</span>', '<a class="btn ghost" href="#anno-task">看板</a>'],
+      ['IMP-20241025-01 著录校对', S('分配 · 任务池'), S('智慧档案室', 'ac'), '<span class="m">archive.ws-item@4</span>', '<span class="m">58</span>', P(100), D('业务已确认', 'ok'), '<span class="m">v2</span> <span class="note">56 采纳 · 2 拒收</span>', '<a class="btn ghost" href="#anno-task">看板</a>'],
+      ['手写体识别训练集', S('分配 · 指定'), S('中台'), '<span class="m">ocr.proofread@2</span>', '<span class="m">120,000</span>', P(71), D('标注中', 'warn'), '<span class="mu">—</span>', '<a class="btn ghost" href="#anno-task">看板</a>'],
+      ['库房巡检视频', S('分配 · 任务池'), S('库房管理', 'ac'), '<span class="m">video.track@1</span>', '<span class="m">1,860</span>', P(100), D('质检中', ''), '<span class="mu">—</span>', '<a class="btn ghost" href="#anno-task">看板</a>'],
+      ['印章样本自采', S('自由'), '张敏', '<span class="m">layout.box@3</span>', '<span class="m">236</span>', P(58), D('标注中', 'warn'), '<span class="mu">—</span>', '<a class="btn ghost" href="#label-free">打开</a>'],
+      ['档案问答评测集', S('自由'), '陈立', '<span class="m">qa.eval@1</span>', '<span class="m">300</span>', P(100), D('已完成', 'ok'), '<span class="m">v1</span> <span class="note">已导出</span>', '<a class="btn ghost" href="#label-free">打开</a>'],
+    ]), true),
+
+  'anno-task': () => ph('IMP-20241026-03 著录校对', 'at_7c1e', '<a class="btn" href="#label-work">打开工作台</a><button class="btn">导出结果</button><button class="btn">撤回</button>') +
+    `<div class="card grid" style="grid-template-columns:repeat(5,1fr);gap:0">
+      <div class="stat"><b>74</b><span>条目</span></div><div class="stat"><b>18</b><span>已提交</span></div>
+      <div class="stat"><b>1</b><span>退回返工</span></div><div class="stat"><b style="color:var(--warn)">3</b><span>问题件</span></div><div class="stat"><b>81%</b><span>预标注采纳率</span></div></div>` +
+    `<div class="grid" style="grid-template-columns:1.6fr 1fr">
+      ${card('<div class="seg"><a class="on">分包 2</a><a>条目</a><a>问题件 3</a></div><span class="bar"><button class="btn sm">批量指派</button><select class="inp" id="tk-pk"><option>每包 50 条</option></select></span>', T(['分包', '条目', '处理人', '状态', '租约', ''], [
+        ['<span class="m">#1</span>', '<span class="m">1–50</span>', `李卫东 ${S('指定')}`, P(36), '<span class="m mu">至 12:40</span>', '<button class="btn sm">改派</button>'],
+        ['<span class="m">#2</span>', '<span class="m">51–74</span>', '<span class="mu">任务池</span>', D('待领取', ''), '<span class="mu">—</span>', '<button class="btn sm">指派</button>'],
+        ['<span class="m">#3</span>', '<span class="m">问题件补件</span>', `陈立 ${S('清单指定')}`, D('标注中', 'warn'), '<span class="m mu">至 11:58</span>', '<button class="btn sm">改派</button>'],
+      ]), true)}
+      ${card('成员', `${T(['平台账号', '角色', ''], [
+          ['李卫东 <span class="m mu">liweidong</span>', S('标注员', 'ac'), '<button class="btn ghost">移除</button>'],
+          ['陈立 <span class="m mu">chenli</span>', S('标注员', 'ac'), '<button class="btn ghost">移除</button>'],
+          ['张敏 <span class="m mu">zhangmin</span>', S('质检员', 'ac'), '<button class="btn ghost">移除</button>'],
+          ['王芳 <span class="m mu">wangfang</span>', S('负责人'), ''],
+        ])}<div class="cb"><button class="btn sm">从身份账号添加</button></div>`, true)}
     </div>` +
-    `<div class="grid" style="grid-template-columns:1.1fr 1fr">
-      ${card('标注模板 · 文书著录要素校对', `<pre class="code">&lt;View&gt;
-  &lt;Image name="page" value="$image"/&gt;
-  &lt;RectangleLabels name="field" toName="page"&gt;
-    &lt;Label value="题名"/&gt; &lt;Label value="文号"/&gt; &lt;Label value="责任者"/&gt;
-    &lt;Label value="成文日期"/&gt; &lt;Label value="密级"/&gt; &lt;Label value="保管期限"/&gt;
-  &lt;/RectangleLabels&gt;
-  &lt;TextArea name="value" toName="page" perRegion="true"/&gt;
-&lt;/View&gt;</pre>`)}
-      ${card('工作台', `<dl class="kv">
-        <dt>画布</dt><dd>Label Studio 编辑器组件 · 前端嵌入</dd>
-        <dt>入口</dt><dd>业务系统打开 <span class="m">/kaifang-meta/console/annotation/workbench/{task_id}</span></dd>
-        <dt>登录</dt><dd>统一认证 SSO 静默登录</dd>
-        <dt>成员</dt><dd>工单指定 · 标注员 2 · 质检员 1</dd>
-        <dt>预标注</dt><dd>predictions 字段带入 extract.doc 结果</dd>
-        <dt>存储</dt><dd class="m">annotation schema</dd></dl>`)}
+    `<div class="grid" style="grid-template-columns:1fr 1fr">
+      ${card('派发与质检', `<dl class="kv">
+        <dt>派发</dt><dd>混合：李卫东 2 · 陈立 1 预指派，余量进任务池</dd>
+        <dt>每人上限</dt><dd class="m">2 个分包</dd>
+        <dt>质检</dt><dd class="m">抽检 20% · 合格率 ≥ 98%</dd>
+        <dt>文件</dt><dd>引用智慧档案室存储 · 按需签发 · 哈希校验</dd>
+        <dt>截止</dt><dd class="m">10-30 18:00</dd></dl>`)}
+      ${card('事件', T(['时间', '事件', '投递'], [
+        ['<span class="m">10-26 10:02</span>', '<span class="m">annotation.task.accepted</span>', D('成功', 'ok')],
+        ['<span class="m">10-26 10:41</span>', '<span class="m">annotation.item.flagged</span> <span class="m mu">×3</span>', D('成功', 'ok')],
+        ['<span class="m">10-26 11:10</span>', '<span class="m">annotation.task.progress</span> <span class="m mu">20%</span>', D('重试 1 次后成功', 'warn')],
+      ]), true)}
     </div>`,
 
-  'label-work': () => ph('IMP-20241026-03 著录校对', '18 / 74', '<button class="btn">跳过</button><button class="btn">上一份</button><button class="btn pri">提交并下一份</button>') + flow('label-work') +
+  'anno-new': () => ph('新建工单', '', '<a class="btn" href="#label">取消</a><a class="btn pri" href="#anno-task">创建</a>') +
+    `<div class="grid" style="grid-template-columns:1.2fr 1fr">
+      ${card('工单', `<dl class="kv">
+        <dt>名称</dt><dd><input class="inp" id="nw-name" value="手写体识别训练集 第二批" style="width:100%"></dd>
+        <dt>方式</dt><dd><div class="seg"><a class="on">分配标注</a><a href="#label-free">自由标注</a></div></dd>
+        <dt>模板</dt><dd><select class="inp" id="nw-tpl" style="width:100%"><option>OCR 文本校对 · ocr.proofread@2</option><option>文书著录要素校对 · archive.ws-item@4</option></select></dd>
+        <dt>数据</dt><dd class="bar"><button class="btn sm">上传清单</button><button class="btn sm">上传文件</button><span class="note">清单可分片追加</span></dd>
+        <dt>派发</dt><dd><div class="seg"><a>任务池领取</a><a>指定用户</a><a class="on">混合</a></div></dd>
+        <dt>分包</dt><dd class="bar"><input class="inp m" id="nw-pk" value="50" style="width:64px"><span class="mu">条 / 包 · 每人最多</span><input class="inp m" id="nw-max" value="2" style="width:48px"><span class="mu">包</span></dd>
+        <dt>质检</dt><dd class="bar"><span class="mu">抽检</span><input class="inp m" id="nw-qa" value="20%" style="width:64px"><span class="mu">合格率 ≥</span><input class="inp m" id="nw-pass" value="98%" style="width:64px"></dd>
+        <dt>截止</dt><dd><input class="inp m" id="nw-due" value="2024-11-15"></dd></dl>`)}
+      ${card('成员 <input class="inp" id="nw-q" placeholder="搜索身份账号" style="width:160px">', T(['平台账号', '角色', '预指派'], [
+        ['李卫东 <span class="m mu">liweidong</span>', '<select class="inp" id="nw-r0"><option>标注员</option><option>质检员</option></select>', '<input class="inp m" id="nw-w0" value="2" style="width:48px">'],
+        ['陈立 <span class="m mu">chenli</span>', '<select class="inp" id="nw-r1"><option>标注员</option><option>质检员</option></select>', '<input class="inp m" id="nw-w1" value="1" style="width:48px">'],
+        ['赵晓 <span class="m mu">zhaoxiao</span>', '<select class="inp" id="nw-r2"><option>标注员</option><option>质检员</option></select>', '<span class="mu">任务池</span>'],
+        ['张敏 <span class="m mu">zhangmin</span>', '<select class="inp" id="nw-r3"><option>质检员</option><option>标注员</option></select>', '<span class="mu">—</span>'],
+      ]), true)}
+    </div>`,
+
+  'anno-mine': () => ph('我的标注', '', '<a class="btn pri" href="#label-free">新建自由标注</a>') +
+    `<div class="card grid" style="grid-template-columns:repeat(4,1fr);gap:0">
+      <div class="stat"><b>1</b><span>手上分包</span></div><div class="stat"><b>12</b><span>任务池可领</span></div>
+      <div class="stat"><b>1</b><span>待质检</span></div><div class="stat"><b>2</b><span>自由标注</span></div></div>` +
+    card('指定给我', T(['工单', '分包', '模板', '进度', '截止', ''], [
+      ['IMP-20241026-03 著录校对', '<span class="m">#1 · 50 条</span>', '文书著录要素校对', P(36), '<span class="m mu">10-30 18:00</span>', '<a class="btn sm pri" href="#label-work">继续</a>'],
+      ['IMP-20241026-03 著录校对', '<span class="m">质检 · 15 条</span>', '文书著录要素校对', P(0), '<span class="m mu">10-30 18:00</span>', '<a class="btn sm" href="#label-review">质检</a>'],
+    ]), true) +
+    card('任务池', T(['工单', '可领分包', '模板', '优先级', '截止', ''], [
+      ['手写体识别训练集', '<span class="m">9</span>', 'OCR 文本校对', S('高', 'warn'), '<span class="m mu">11-15 18:00</span>', '<a class="btn sm" href="#label-work">领取</a>'],
+      ['库房巡检视频', '<span class="m">3</span>', '视频分段与跟踪', S('普通'), '<span class="m mu">11-02 18:00</span>', '<a class="btn sm" href="#label-work">领取</a>'],
+    ]), true) +
+    card('自由标注', T(['名称', '模板', '协作者', '条目', '进度', ''], [
+      ['印章样本自采', '版面要素框选', '陈立', '<span class="m">236</span>', P(58), '<a class="btn sm pri" href="#label-free">打开</a>'],
+      ['档案问答评测集', '问答评测', '—', '<span class="m">300</span>', D('已完成 · v1', 'ok'), '<a class="btn ghost" href="#label-free">查看</a>'],
+    ]), true),
+
+  'anno-tpl': () => ph('场景模板', '', '<button class="btn">复制</button><button class="btn">保存草稿</button><button class="btn pri">发布 v5</button>') +
+    `<div class="grid" style="grid-template-columns:200px minmax(0,1fr) minmax(0,1fr)">
+      ${card('模板', `<div class="tree">
+        <span class="note">系统</span><a class="l2">OCR 文本校对</a><a class="l2">目标检测</a><a class="l2">视频分段与跟踪</a><a class="l2">实体与关系</a><a class="l2">问答评测</a>
+        <span class="note">本租户</span><a class="l2 on">文书著录要素校对</a><a class="l2">版面要素框选</a>
+        <span class="note">智慧档案室</span><a class="l2">密级判定</a></div>`)}
+      ${card('<div class="seg"><a class="on">XML</a><a>参数</a><a>映射</a><a>质检</a></div><span class="m mu">archive.ws-item · v4</span>', `<pre class="code">&lt;View&gt;
+  &lt;Image name="page" valueList="$pages"/&gt;
+  &lt;Header value="题名"/&gt;
+  &lt;TextArea name="title" toName="page" editable="true"/&gt;
+  &lt;Header value="文号"/&gt;
+  &lt;TextArea name="doc_no" toName="page" editable="true"/&gt;
+  &lt;Choices name="secret" toName="page" choice="single"&gt;
+    {{#secret_levels}}&lt;Choice value="{{.}}"/&gt;{{/secret_levels}}
+  &lt;/Choices&gt;
+&lt;/View&gt;</pre>
+        <dl class="kv"><dt>数据契约</dt><dd class="m">pages: file[] · ocr_text?: string</dd><dt>结果映射</dt><dd class="m">title · doc_no · secret_level</dd><dt>校验</dt><dd>${S('XML 可解析', 'ok')} ${S('映射完整', 'ok')}</dd></dl>`)}
+      ${card('<span>预览</span><div class="seg"><a class="on">中文</a><a>English</a></div>', `<div class="grid" style="grid-template-columns:minmax(0,1fr) 160px;gap:12px;align-items:start">
+        <div class="doc"><div class="hdr">××省档案局文件</div><div class="no">×档发〔2024〕12号</div><div class="rule"></div><div class="tt">关于开展档案数字化质量检查的通知</div>${'<div class="ln"></div>'.repeat(5)}<div class="seal"></div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><span class="mu">题名</span><input class="inp" id="tp-a" value="关于开展档案数字化…"><span class="mu">文号</span><input class="inp" id="tp-b" value="×档发〔2024〕12号"><span class="mu">密级</span><div class="bar">${S('公开', 'ac')}${S('内部')}${S('秘密')}</div></div></div>`)}
+    </div>`,
+
+  settings: () => ph('平台设置', '', '<button class="btn pri">保存</button>') +
+    card('界面语言', `<dl class="kv" style="grid-template-columns:140px 1fr">
+      <dt>默认语言</dt><dd><div class="seg"><a class="on">简体中文</a><a>English</a></div></dd>
+      <dt>标注编辑器</dt><dd><div class="seg"><a class="on">跟随界面</a><a>汉化版</a><a>英文原版</a></div></dd>
+      <dt>用户切换</dt><dd><label class="chk" style="padding:0"><input type="checkbox" id="st-sw" checked>允许用户在顶栏切换语言</label></dd>
+      <dt>编辑器版本</dt><dd class="m">@kaifang-meta/label-studio-editor 1.23.2-km.3</dd></dl>`),
+
+  'label-work': () => ph('IMP-20241026-03 著录校对', '分包 #1 · 18 / 50', '<button class="btn">标为问题件</button><button class="btn">跳过</button><button class="btn">上一份</button><button class="btn pri">提交并下一份</button>') + flow('label-work') +
     `<div class="card bar" style="padding:8px 12px">${[['1', '题名', '#2f7a63'], ['2', '文号', '#7a4fb0'], ['3', '责任者', '#2b61a3'], ['4', '成文日期', '#a8680b'], ['5', '密级', '#b8403a'], ['6', '保管期限', '#5c6b7a']]
       .map(([k, l, c]) => `<span class="tag" style="background:color-mix(in srgb, ${c} 14%, transparent);color:${c}">${l}<span class="m" style="opacity:.65">${k}</span></span>`).join('')}
       <span class="sp" style="flex:1"></span><span class="note m">extract.doc@1.2</span></div>` +
@@ -643,6 +699,21 @@ km.capability("archive.import.ocr").invoke(req, OcrResult.class);
           .map(([k, v, c, f], i) => { const low = c === '—' || +c < 0.9;
             return `<label style="display:flex;flex-direction:column;gap:4px"><span class="bar"><span class="mu">${k}</span>${f ? S(f, 'ac') : ''}<span class="sp" style="flex:1"></span><span class="m" style="color:var(--${low ? 'warn' : 'faint'})">${c}</span></span><input class="inp" id="lf${i}" value="${v}"${low ? ' style="border-color:var(--warn)"' : ''}></label>`; }).join('')}
         <div class="bar"><span class="sp" style="flex:1"></span><a class="btn sm" href="#label-review">完成并提交质检</a></div>`)}
+    </div>`,
+
+  'label-free': () => ph('印章样本自采', '137 / 236', '<button class="btn">上传数据</button><button class="btn">邀请协作者</button><button class="btn pri">完成</button>') +
+    `<div class="grid" style="grid-template-columns:220px minmax(0,1fr) 260px">
+      ${card('<div class="seg"><a class="on">全部</a><a>未标 99</a><a>已标</a></div>', `<div class="tree">${[['seal-0131.jpg', 'ok'], ['seal-0132.jpg', 'ok'], ['seal-0133.jpg', ''], ['seal-0134.jpg', 'ok'], ['seal-0135.jpg', ''], ['seal-0136.jpg', ''], ['seal-0137.jpg', 'on'], ['seal-0138.jpg', '']]
+        .map(([f, k]) => `<a class="${k === 'on' ? 'on' : ''}"><span class="m">${f}</span> ${k === 'ok' ? '<span style="color:var(--ok)">✓</span>' : ''}</a>`).join('')}</div>`)}
+      <div class="card" style="padding:16px;display:flex;justify-content:center;background:var(--sunk)">
+        <div class="doc" style="width:400px">
+          <div class="hdr">××市档案馆</div><div class="no">×档函〔2023〕7号</div><div class="rule"></div><div class="tt">关于移交 2018 年度文书档案的函</div>
+          ${'<div class="ln"></div>'.repeat(5)}<div style="text-align:right;font-size:11px;margin-top:auto">××市档案馆<br>2023年6月2日</div><div class="seal"></div>
+          <div class="box" style="--b:#b8403a;left:62%;top:78%;width:26%;height:19%"><span>印章</span></div>
+          <div class="box" style="--b:#2b61a3;left:9%;top:6%;width:82%;height:8%"><span>发文机关</span></div>
+        </div></div>
+      ${card('区域 2', `${T(['标签', '置信'], [[S('印章', 'err'), '<span class="m mu">手工</span>'], [S('发文机关', 'ac'), '<span class="m mu">手工</span>']])}
+        <dl class="kv"><dt>协作者</dt><dd>陈立</dd><dt>保存</dt><dd class="m mu">自动 · 11:42</dd></dl>`)}
     </div>`,
 
   jobs: () => ph('任务调度', '', '<button class="btn pri">新建定时任务</button>') +
@@ -725,22 +796,23 @@ km.capability("archive.import.ocr").invoke(req, OcrResult.class);
         <dt>范围</dt><dd><div class="seg"><a class="on">仅低置信度 74 份</a><a>全部 312 份</a><a>抽检 10%</a></div></dd>
         <dt>字段</dt><dd class="bar">${['题名', '文号', '责任者', '成文日期', '密级', '保管期限'].map((f, i) => `<label class="chk"><input type="checkbox" id="sd-f${i}" checked>${f}</label>`).join('')}</dd>
         <dt>预标注</dt><dd>带入预抽取结果与逐字段置信度，标注员只需确认或修改</dd>
-        <dt>标注员</dt><dd class="bar">${S('李卫东')}${S('陈立')}<button class="btn sm">添加</button></dd>
+        <dt>派发</dt><dd><div class="seg"><a>任务池领取</a><a>指定标注员</a><a class="on">混合</a></div></dd>
+        <dt>标注员</dt><dd class="bar">${S('李卫东 · 2')}${S('陈立 · 1')}<button class="btn sm">添加</button></dd>
         <dt>质检员</dt><dd class="bar">${S('张敏')}<button class="btn sm">添加</button></dd>
         <dt>质检</dt><dd>抽检 20% · 不通过退回原标注员</dd>
         <dt>截止</dt><dd><input class="inp m" id="sd-due" value="2024-10-30"></dd></dl>`)}
       ${card('发送内容', `<dl class="kv">
-        <dt>数据集</dt><dd><span class="m">ds.imp-20241026-03@v1</span> · 只读快照</dd>
+        <dt>文件</dt><dd>引用档案室原件，不复制 · 按需签发下载地址</dd>
         <dt>内容</dt><dd>74 份 · 412 页 · 页面图像、文本层坐标、预抽取结果</dd>
         <dt>档案状态</dt><dd>${S('标注中 · 著录项只读', 'warn')}</dd>
         <dt>回传</dt><dd>质检通过后推送事件，进入回写确认</dd>
         <dt>幂等键</dt><dd class="m">批次号 + 档号</dd></dl>
 <pre class="code">// kaifang-meta-spring-boot-starter
 annotationClient.createTask(CreateTaskReq.builder()
-    .template("archive.catalog")
-    .dataset(snapshot(batch, lowConfidence))
-    .annotators("u_3301", "u_3303").reviewers("u_8f21c0")
-    .callback("annotation.task.completed")
+    .template("archive.ws-item@4")
+    .fileMode(REF).manifest(lowConfidence(batch))
+    .dispatch(mixed().assign("u_3301", 2).assign("u_3303", 1))
+    .reviewers("u_8f21c0")
     .build());</pre>`)}
     </div>`,
 
@@ -864,7 +936,7 @@ annotationClient.createTask(CreateTaskReq.builder()
 const CRUMB = {
   users: '认证 / <b>身份账号</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
   kb: '能力 / <b>知识库</b>', 'kb-detail': '能力 / 知识库 / <b>档案业务规范库</b>', agents: '能力 / <b>Agent</b>', 'agent-detail': '能力 / Agent / <b>档案问答助手</b>',
-  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>数据标注</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
+  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
   'ar-home': '<b>工作台</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',
   'ar-import': '<b>档案导入</b>', 'ar-batch': '档案导入 / <b>IMP-20241026-03</b>', 'ar-send': '档案导入 / IMP-20241026-03 / <b>送标注</b>', 'ar-writeback': '档案导入 / IMP-20241026-03 / <b>回写确认</b>', 'ar-label': '<b>标注任务</b>', 'ar-roles': '系统 / <b>角色与权限</b>',
 };
