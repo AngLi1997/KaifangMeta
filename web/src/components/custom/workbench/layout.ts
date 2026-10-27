@@ -15,6 +15,8 @@ export interface ColumnDef {
   title: string
   type?: 'text' | 'number' | 'date'
   width?: string
+  /** 表格 editable 时该列可编辑 */
+  editable?: boolean
 }
 
 export interface LayoutNode {
@@ -205,7 +207,7 @@ function parseNode(el: Element): LayoutNode {
   else if (el.tagName === 'DataTable') {
     n.columns = childrenOf(el).map((c) => {
       const a = attrsOf(c)
-      return { key: a.key ?? '', title: a.title ?? '', type: a.type as ColumnDef['type'], width: a.width }
+      return { key: a.key ?? '', title: a.title ?? '', type: a.type as ColumnDef['type'], width: a.width, editable: a.editable === 'true' }
     })
   }
   return n
@@ -291,7 +293,7 @@ function tag(n: LayoutNode, ind: string): string {
   if (n.fields)
     return open(n.fields.map(f => `${ind}  <Field${attrText({ name: f.name, label: f.label, type: f.type, required: f.required, options: f.options })}/>`))
   if (n.columns)
-    return open(n.columns.map(c => `${ind}  <Column${attrText({ key: c.key, title: c.title, type: c.type, width: c.width })}/>`))
+    return open(n.columns.map(c => `${ind}  <Column${attrText({ key: c.key, title: c.title, type: c.type, width: c.width, editable: c.editable })}/>`))
   return open((n.children ?? []).map(c => tag(c, `${ind}  `)))
 }
 

@@ -76,7 +76,7 @@ import Workbench from '@/components/custom/workbench/Workbench.vue'
 | 布局 | 面板 | `<Panel>` | 标题 + 边框 + 滚动 | 任意容器 | [panel.md](panel.md) |
 | 布局 | 间隔 | `<Spacer>` | 按钮栏里推开两组按钮；其他容器里留一段空白 | 任意容器 | [spacer.md](spacer.md) |
 | 组件 | 表单 | `<Form>` + `<Field>` | 画布之外的著录字段 | 任意容器 | [form.md](form.md) |
-| 组件 | 数据表格 | `<DataTable>` + `<Column>` | 只读行数据（当前为样例） | 任意容器 | [data-table.md](data-table.md) |
+| 组件 | 数据表格 | `<DataTable>` + `<Column>` | 行数据，可按列编辑（当前为样例） | 任意容器 | [data-table.md](data-table.md) |
 | 按钮 | 按钮栏 | `<ButtonBar>` | 横向排列按钮并对齐 | 任意容器 | [button-bar.md](button-bar.md) |
 | 按钮 | 按钮 | `<Button action>` | 触发公共命令 | 按钮栏 | [button.md](button.md) |
 | Label Studio | 画布 | `<Canvas>` | 承载编辑器 | 任意容器，最多一个 | [canvas.md](canvas.md) |

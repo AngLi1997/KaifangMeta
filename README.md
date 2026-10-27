@@ -41,6 +41,7 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [场景模板](docs/platform/annotation/templates.md) | 标注界面如何自定义 | 模板组成、参数与映射、内置场景库、自定义与版本 | 部分实现 |
 | [工作台布局与插件](docs/platform/annotation/layout.md) | 标注工作台如何布局与扩展 | 可嵌套布局容器、XML 与拖拽设计器（含 Label Studio 原生标签）、按钮 / 著录表单 / 数据表格组件、JSON / YAML 导出、组件联动 | 部分实现 |
 | [工作台组件](docs/platform/annotation/components/README.md) | 工作台组件怎么用 | 工作台、网格、列表、面板、表单、数据表格、按钮栏、按钮、间隔、画布、布局设计器：演示、生命周期、属性、事件、方法；组件分工与去重 | 部分实现 |
+| [组件事件与框选回填](docs/platform/annotation/linkage.md) | 工作台组件修改如何传出、画布控件如何回填表单 | 表格 change 事件的三条去路（组件联动 / 宿主消息 / 业务数据源与结果）、Label Studio 控件 bind / pick 回填表单与表格、识别接口、校验与分期 | 设计中 |
 | [业务系统对接](docs/platform/annotation/integration.md) | 业务如何嵌入标注与收发数据 | 页面嵌入、海量数据引用模式、清单分片、接口、事件、时序 | 设计中 |
 | [数据采集](docs/platform/ingest.md) | 外部数据与现场硬件如何进入平台 | 连接器、原始区、edge-agent 上报与指令 | 设计中 |
 | [定时任务与异步处理](docs/platform/scheduler.md) | 长任务、定时任务如何执行 | PG 任务表、Worker、队列并发、重试超时幂等 | 部分实现 |

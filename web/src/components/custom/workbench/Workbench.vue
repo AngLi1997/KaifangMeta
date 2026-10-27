@@ -31,8 +31,9 @@ const emit = defineEmits<{
   next: []
 }>()
 
-/** 表单值随标注结果保存，用这个 type 与 Label Studio 结果区分 */
+/** 表单值、可编辑表格的行随标注结果保存，用这两个 type 与 Label Studio 结果区分 */
 const FORM_RESULT = 'km.form'
+const TABLE_RESULT = 'km.table'
 
 const parsed = computed(() => {
   try {
@@ -46,6 +47,8 @@ const parsed = computed(() => {
 })
 const nodes = computed(() => parsed.value.root ? walk(parsed.value.root) : [])
 const formNodes = computed(() => nodes.value.filter(n => n.type === 'Form'))
+const tableNodes = computed(() => nodes.value.filter(n => n.type === 'DataTable'))
+const editableTables = computed(() => tableNodes.value.filter(t => t.attrs.editable === 'true'))
 const hasCanvas = computed(() => nodes.value.some(n => n.type === 'Canvas'))
 
 // 表单值：按表单名建好对象，切换条目或模板时从结果里回填
@@ -57,15 +60,28 @@ watch([formNodes, () => props.result], () => {
     forms[f.attrs.name] = { ...(saved[f.attrs.name] as object) }
 }, { immediate: true })
 
-const canvasRef = ref<InstanceType<typeof AnnotationCanvas> | null>(null)
-const canvasResult = computed(() => (props.result ?? []).filter(r => r.type !== FORM_RESULT))
+// 表格行：可编辑表格从结果回填，否则用样例数据
+const tables = reactive<Record<string, Record<string, unknown>[]>>({})
+watch([tableNodes, () => props.result], () => {
+  const saved = Object.fromEntries((props.result ?? []).filter(r => r.type === TABLE_RESULT).map(r => [r.from_name, (r.value as { rows: Record<string, unknown>[] }).rows]))
+  for (const k of Object.keys(tables)) delete tables[k]
+  for (const t of tableNodes.value)
+    tables[t.attrs.name] = t.attrs.editable === 'true' && saved[t.attrs.name] ? JSON.parse(JSON.stringify(saved[t.attrs.name])) : mockRows(t.columns ?? [])
+}, { immediate: true })
 
-/** 提交给业务的结果：Label Studio 结果 + 每个表单一条；画布未就绪时为 null */
+const canvasRef = ref<InstanceType<typeof AnnotationCanvas> | null>(null)
+const canvasResult = computed(() => (props.result ?? []).filter(r => r.type !== FORM_RESULT && r.type !== TABLE_RESULT))
+
+/** 提交给业务的结果：Label Studio 结果 + 每个表单一条 + 每个可编辑表格一条；画布未就绪时为 null */
 function getResult(): Result | null {
   const canvas = hasCanvas.value ? canvasRef.value?.getResult() : []
   if (!canvas)
     return null
-  return [...canvas, ...formNodes.value.map(f => ({ type: FORM_RESULT, from_name: f.attrs.name, value: { ...forms[f.attrs.name] } }))]
+  return [
+    ...canvas,
+    ...formNodes.value.map(f => ({ type: FORM_RESULT, from_name: f.attrs.name, value: { ...forms[f.attrs.name] } })),
+    ...editableTables.value.map(t => ({ type: TABLE_RESULT, from_name: t.attrs.name, value: { rows: JSON.parse(JSON.stringify(tables[t.attrs.name])) } })),
+  ]
 }
 
 const logs = ref<string[]>([])
@@ -80,7 +96,7 @@ function snapshot() {
     item: props.item ? { id: props.item.id, name: props.item.name, index: props.item.index } : null,
     data: props.data,
     forms: JSON.parse(JSON.stringify(forms)),
-    tables: Object.fromEntries(nodes.value.filter(n => n.type === 'DataTable').map(t => [t.attrs.name, mockRows(t.columns ?? [])])),
+    tables: JSON.parse(JSON.stringify(tables)),
     result: hasCanvas.value ? (canvasRef.value?.getResult() ?? canvasResult.value) : [],
   }
 }
@@ -149,6 +165,7 @@ provide(WORKBENCH, {
   loading: computed(() => !!props.loading),
   logs,
   forms,
+  tables,
   canvas: { config: computed(() => parsed.value.canvas), data: toRef(props, 'data'), result: canvasResult },
   setCanvas: el => canvasRef.value = el as InstanceType<typeof AnnotationCanvas> | null,
 })

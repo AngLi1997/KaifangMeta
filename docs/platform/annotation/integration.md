@@ -31,6 +31,7 @@
 { "type": "km.annotation.item.submitted", "task_id": "at_7c1e", "item_key": "J001-2024-WS30-0012" }
 { "type": "km.annotation.package.finished", "task_id": "at_7c1e", "package": 3 }
 { "type": "km.annotation.close", "task_id": "at_7c1e" }
+{ "type": "km.annotation.change", "task_id": "at_7c1e", "item_key": "J001-2024-WS30-0012", "component": "files", "kind": "table", "change": { "rowKey": 1, "key": "title", "value": "…", "old": "…" } }
 ```
 
 ### SDK
@@ -38,7 +39,7 @@
 | 包 | 能力 |
 |----|------|
 | Java `kaifang-meta-spring-boot-starter`（`KmAnnotation`） | 建单、清单分片上传、指派、查询、拉取结果、ack；`@KmEventListener("annotation.*")`；`annotationUrl(taskId, view)`；文件签发接口 `KmAnnotationFileResolver` 默认实现 |
-| 前端 `@kaifang-meta/sdk` | `openAnnotation(taskId, { mode: 'tab' \| 'iframe', view: 'workbench' \| 'board' \| 'viewer' })`，处理 iframe 高度与消息 |
+| 前端 `@kaifang-meta/sdk` | `openAnnotation(taskId, { mode: 'tab' \| 'iframe', view: 'workbench' \| 'board' \| 'viewer' })`，处理 iframe 高度与消息；`.on('change', fn)` 订阅工作台内组件修改（见[组件事件与框选回填](linkage.md#去向)） |
 
 ## 海量数据接入
 

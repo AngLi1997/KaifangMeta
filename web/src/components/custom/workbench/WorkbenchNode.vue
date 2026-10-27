@@ -2,10 +2,11 @@
 // 工作台布局树的递归渲染：容器排布子节点，组件从工作台上下文取数据与命令
 import type { CSSProperties } from 'vue'
 import type { LayoutNode } from './layout'
-import { useThemeVars } from 'naive-ui'
+// 别名导入：模板里仍按 n-xxx 用全局注册的组件
+import { NDatePicker as CellDate, NInput as CellInput, NInputNumber as CellNumber, useThemeVars } from 'naive-ui'
 import { WORKBENCH } from './context'
 import { COMPONENT_ICONS } from './icons'
-import { ALIGN, defOf, flexOf, gapOf, JUSTIFY, mockRows } from './layout'
+import { ALIGN, defOf, flexOf, gapOf, JUSTIFY } from './layout'
 
 const props = defineProps<{ node: LayoutNode }>()
 const ctx = inject(WORKBENCH)!
@@ -48,8 +49,24 @@ const fields = computed(() => n.value.fields ?? [])
 // 表单值由工作台按表单名预先建好，这里只读写字段
 const values = computed(() => ctx.forms[n.value.attrs.name] ?? {})
 const options = (s?: string) => (s ?? '').split(',').filter(Boolean).map(o => ({ label: o, value: o }))
-const tableColumns = computed(() => (n.value.columns ?? []).map(c => ({ key: c.key, title: c.title, width: c.width ? Number(c.width) : undefined, ellipsis: { tooltip: true } })))
-const tableRows = computed(() => mockRows(n.value.columns ?? []))
+// 表格行由工作台按表格名建好；表格可编辑时，勾选可编辑的列渲染为输入控件
+const tableRows = computed(() => ctx.tables[n.value.attrs.name] ?? [])
+type Row = Record<string, unknown>
+function cell(key: string, type?: string) {
+  return (row: Row) => {
+    if (type === 'number')
+      return h(CellNumber, { 'size': 'small', 'value': row[key] as number, 'showButton': false, 'onUpdate:value': (v: number | null) => row[key] = v })
+    if (type === 'date')
+      return h(CellDate, { 'size': 'small', 'type': 'date', 'formattedValue': row[key] as string, 'valueFormat': 'yyyy-MM-dd', 'onUpdate:formattedValue': (v: string | null) => row[key] = v })
+    return h(CellInput, { 'size': 'small', 'value': row[key] as string, 'onUpdate:value': (v: string) => row[key] = v })
+  }
+}
+const tableColumns = computed(() => (n.value.columns ?? []).map(c => ({
+  key: c.key,
+  title: c.title,
+  width: c.width ? Number(c.width) : undefined,
+  ...(n.value.attrs.editable === 'true' && c.editable ? { render: cell(c.key, c.type) } : { ellipsis: { tooltip: true } }),
+})))
 </script>
 
 <template>

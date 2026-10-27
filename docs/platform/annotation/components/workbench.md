@@ -59,7 +59,7 @@
 | 阶段 | 时机 | 行为 |
 |------|------|------|
 | 解析 | `config` 变化 | 解析布局树并校验；结构错误只显示错误，规则错误（如 `toName` 无效）显示错误并照常渲染 |
-| 初始化表单 | 解析后、`result` 变化 | 按表单 `name` 建值对象，从结果中 `type: km.form` 的条目回填 |
+| 初始化表单 / 表格 | 解析后、`result` 变化 | 按表单 `name` 建值对象，从结果中 `type: km.form` 的条目回填；可编辑表格从 `type: km.table` 回填，其余表格用样例行 |
 | 挂载 | 首次渲染 | 递归渲染容器与组件；画布新建编辑器并选中（或新建）一份标注 |
 | 切换条目 | `data` / `result` 变化 | 表单回填、画布重建编辑器；`item.id` 变化时清空日志 |
 | 交互 | 点击按钮或宿主调用 `run` | 执行命令，写日志，按需发出事件 |
@@ -67,12 +67,13 @@
 
 ## 结果与快照
 
-提交给业务的结果是一个数组：Label Studio 结果原样保留，每个表单追加一条。
+提交给业务的结果是一个数组：Label Studio 结果原样保留，每个表单、每个可编辑表格各追加一条。
 
 ```json
 [
   { "type": "rectanglelabels", "from_name": "label", "to_name": "image", "value": { "x": 12, "y": 30, "width": 20, "height": 15, "rectanglelabels": ["印章"] } },
-  { "type": "km.form", "from_name": "meta", "value": { "title": "关于开展档案数字化质量检查的通知", "secret": "内部" } }
+  { "type": "km.form", "from_name": "meta", "value": { "title": "关于开展档案数字化质量检查的通知", "secret": "内部" } },
+  { "type": "km.table", "from_name": "files", "value": { "rows": [{ "seq": 1, "title": "企业设立登记申请书" }] } }
 ]
 ```
 

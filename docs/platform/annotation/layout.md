@@ -1,6 +1,6 @@
 # 工作台布局与插件
 
-> 平台 · 数据标注模块。标注工作台的布局怎么搭、平台组件有哪些、数据怎么查看与导出。组件用法见[工作台组件](components/README.md)。相关：[场景模板](templates.md)、[Label Studio 集成与语言](labelstudio.md)、[业务系统对接](integration.md)。
+> 平台 · 数据标注模块。标注工作台的布局怎么搭、平台组件有哪些、数据怎么查看与导出。组件用法见[工作台组件](components/README.md)。相关：[组件事件与框选回填](linkage.md)、[场景模板](templates.md)、[Label Studio 集成与语言](labelstudio.md)、[业务系统对接](integration.md)。
 
 ## 要点
 
@@ -166,7 +166,7 @@ interface WorkbenchPlugin<P, V> {
 
 ### 著录表单 `RecordForm`
 
-在已实现的通用表单 [`Form`](components/form.md) 上增加框选回填、预抽取与 AI 提取；字段定义与通用表单一致。
+在已实现的通用表单 [`Form`](components/form.md) 上增加框选回填、预抽取与 AI 提取；字段定义与通用表单一致。框选回填的通用方案（任意 Label Studio 控件经 `bind` / `pick` 回填表单与表格）见[组件事件与框选回填](linkage.md)。
 
 | 属性 | 说明 |
 |------|------|
@@ -206,9 +206,9 @@ interface WorkbenchPlugin<P, V> {
 |------|------|
 | `source` | 数据源编码（`应用.数据源`），在应用接入中登记，见下文 |
 | `rowKey` | 行主键 |
-| `editable` | 可编辑列；不写为只读 |
+| `editable` | 是否可编辑；开启后由 `<Column editable>` 决定哪些列可改（已实现，见[数据表格](components/data-table.md#可编辑)） |
 | `pageSize` | 分页大小，默认 10 |
-| `<Column key title width type ellipsis>` | 列定义；列名称、宽度、类型由模板自定义 |
+| `<Column key title width type ellipsis editable>` | 列定义；列名称、宽度、类型、是否可编辑由模板自定义 |
 | `onChange` | `immediate`（单元格失焦即调用业务更新）/ `submit`（随提交一起，默认） |
 
 数据源由业务应用登记，模板引用编码，平台代理调用：
@@ -330,7 +330,7 @@ annotation: { result: [ … ] } # Label Studio 原始结果
 
 ## 分期
 
-已实现：布局解析与容器（网格含跨行跨列、横向 / 纵向列表、面板）、按钮栏（对齐方式）、设计器右键菜单、公共按钮（撤销、重做、上一份、下一份、查看数据、导出 JSON / YAML、日志、保存草稿、提交）、间隔、拖拽设计器与 Label Studio 原生标签、通用表单（字段与类型可配，值随结果保存，提交校验必填）、数据表格（列可配，静态样例数据）。统一历史目前只覆盖画布，联动、数据源、著录表单的框选回填未实现。
+已实现：布局解析与容器（网格含跨行跨列、横向 / 纵向列表、面板）、按钮栏（对齐方式）、设计器右键菜单、公共按钮（撤销、重做、上一份、下一份、查看数据、导出 JSON / YAML、日志、保存草稿、提交）、间隔、拖拽设计器与 Label Studio 原生标签、通用表单（字段与类型可配，值随结果保存，提交校验必填）、数据表格（列可配、可按列编辑，静态样例数据）。统一历史目前只覆盖画布，联动、数据源、著录表单的框选回填未实现。
 
 实际开发保持克制，按期开放组件，不一次铺开：
 

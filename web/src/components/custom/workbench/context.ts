@@ -17,6 +17,8 @@ export interface WorkbenchContext {
   logs: Ref<string[]>
   /** 表单值：表单名 → 字段名 → 值 */
   forms: Record<string, Record<string, unknown>>
+  /** 表格行：表格名 → 行 */
+  tables: Record<string, Record<string, unknown>[]>
   canvas: { config: Ref<string>, data: Ref<Record<string, unknown>>, result: Ref<Record<string, unknown>[]> }
   setCanvas: (el: unknown) => void
 }

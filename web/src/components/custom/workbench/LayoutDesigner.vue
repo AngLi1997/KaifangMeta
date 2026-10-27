@@ -456,6 +456,9 @@ const columnTypeOptions = [{ value: 'text', label: '文本' }, { value: 'number'
           </n-button>
         </template>
         <template v-if="current.node.type === 'DataTable'">
+          <n-form-item label="可编辑">
+            <n-switch :value="current.node.attrs.editable === 'true'" @update:value="(v: boolean) => v ? current!.node.attrs.editable = 'true' : delete current!.node.attrs.editable" />
+          </n-form-item>
           <n-divider title-placement="left" class="my-2!">
             列
           </n-divider>
@@ -467,6 +470,9 @@ const columnTypeOptions = [{ value: 'text', label: '文本' }, { value: 'number'
             <n-flex :wrap="false" :size="6" align="center">
               <n-select v-model:value="c.type" :options="columnTypeOptions" placeholder="类型" clearable class="flex-1" />
               <n-input v-model:value="c.width" placeholder="宽度" class="w-20!" />
+              <n-checkbox v-if="current.node.attrs.editable === 'true'" v-model:checked="c.editable">
+                可编辑
+              </n-checkbox>
               <n-button text type="error" @click="current!.node.columns!.splice(i, 1)">
                 <icon-park-outline-delete />
               </n-button>
