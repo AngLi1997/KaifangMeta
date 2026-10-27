@@ -16,7 +16,7 @@ function renderDropTabsIcon(option: any) {
 
 const router = useRouter()
 function handleDropTabs(key: string, option: any) {
-  router.push(option.path)
+  router.push(option.fullPath)
 }
 </script>
 

@@ -12,7 +12,8 @@ description: KaifangMetaPlatform 前端（web/，基于 nova-admin）的 UI 开�
 - **先复用，再新写**。按顺序找：本仓库已有的 nova 组件 / hooks / 指令（清单见 [references/components.md](references/components.md)）→ Naive UI 组件 → 实在没有才新写，且可复用的放 `src/components/common/`。
 - **列表页顶部必须有筛选条面板**：使用 `SearchCard` 放置与业务常用查询相关的筛选项，保持字段精简、布局清楚，不为凑形式堆入低频或无用条件；随后是 `n-card`（header 放主操作按钮）+ `DataTable`。新增 / 编辑用 `components/XxxModal.vue`，次级配置用抽屉。模板见 [references/page-templates.md](references/page-templates.md)。
 - **对话框、确认框、消息框只用统一封装**：`FormModal`、`confirmDialog`、`message`，保证样式与行为一致；需要新形态时扩展封装，不在页面里直接用 `n-modal` / `window.$dialog` / `window.$message`。
-- **不硬编码颜色、不自造样式**：颜色用 Naive 主题变量（`var(--primary-color)` 等，主题在 `src/store/app/theme.json`，用户可在设置抽屉切换），间距与布局用 UnoCSS 工具类和 nova 的 shortcuts（`wh-full`、`flex-center` 等）。
+- **强调色跟随主题**：所有用于强调、选中或主操作的组件颜色都必须动态使用当前主题主色（`var(--primary-color)`、`var(--primary-color-hover)` 等，主题在 `src/store/app/theme.json`，用户可在设置抽屉切换）；Naive UI 组件优先使用 `type="primary"`，有颜色属性时传入对应主题变量，不依赖固定默认色。状态颜色继续表达成功、警告、错误等语义。
+- **不硬编码颜色、不自造样式**：颜色用 Naive 主题变量，间距与布局用 UnoCSS 工具类和 nova 的 shortcuts（`wh-full`、`flex-center` 等）。
 - **图标只用 icon-park-outline**：模板里写组件 `<icon-park-outline-add-one />`（unplugin-icons 自动导入），数据里（菜单、`NovaIcon`）写字符串 `icon-park-outline:add-one`。
 - **按钮权限用接口权限码**：`v-permission="'post/api/v1/user/create'"` 或 `hasPermission(...)`，码 = 小写方法 + 去掉网关前缀的接口路径；超级管理员全通过。
 - **避免不必要的次级标签和描述，让布局本身说明**（仓库 AGENTS.md 的 UI 约定）：不加“说明：……”段落、不给显而易见的字段写提示；必要的风险提示放进 `NPopconfirm` 文案或 `HelpInfo`。

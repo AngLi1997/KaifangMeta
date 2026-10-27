@@ -25,6 +25,7 @@ const columns: DataTableColumns<Entity.AnnotationTask> = [
     render: row => (
       <NProgress
         type="line"
+        color="var(--primary-color)"
         percentage={row.item_count ? Math.round(row.labeled_count / row.item_count * 100) : 0}
         indicator-placement="inside"
       />
