@@ -13,7 +13,8 @@ die() { printf '\033[31m[kaifang-meta]\033[0m %s\n' "$*" >&2; exit 1; }
 if [ ! -f .env ]; then
   cp .env.example .env
   # 本地生成签名密钥，避免使用模板占位值
-  for key in CONSOLE_GATEWAY_SECRET CONSOLE_EVENT_SECRET PLATFORM_GATEWAY_SECRET POSTGRES_APP_PASSWORD; do
+  for key in CONSOLE_GATEWAY_SECRET CONSOLE_EVENT_SECRET PLATFORM_GATEWAY_SECRET POSTGRES_APP_PASSWORD \
+    APISIX_ADMIN_KEY MINIO_ROOT_PASSWORD; do
     sed -i.bak "s/^$key=.*/$key=$(openssl rand -hex 32)/" .env
   done
   rm -f .env.bak
@@ -22,6 +23,18 @@ fi
 set -a
 . ./.env
 set +a
+
+# 避免示例管理凭据随局域网 HTTPS 运维入口暴露
+if [ "$APISIX_ADMIN_KEY" = "edd1c9f034335f136f87ad84b625c8f1" ] || [ "$APISIX_ADMIN_KEY" = "change-me-openssl-rand-32" ]; then
+  APISIX_ADMIN_KEY=$(openssl rand -hex 32)
+  sed -i.bak "s/^APISIX_ADMIN_KEY=.*/APISIX_ADMIN_KEY=$APISIX_ADMIN_KEY/" .env
+  rm -f .env.bak
+fi
+if [ "$MINIO_ROOT_PASSWORD" = "change-me-openssl-rand-32" ]; then
+  MINIO_ROOT_PASSWORD=$(openssl rand -hex 32)
+  sed -i.bak "s/^MINIO_ROOT_PASSWORD=.*/MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD/" .env
+  rm -f .env.bak
+fi
 
 command -v docker >/dev/null || die "未找到 docker"
 docker info >/dev/null 2>&1 || die "Docker 未运行"
@@ -54,11 +67,20 @@ for port in "$POSTGRES_PORT" "$REDIS_PORT" "$MINIO_PORT" "$MINIO_CONSOLE_PORT" "
   "$APISIX_HTTP_PORT" "$APISIX_HTTPS_PORT" "$APISIX_ADMIN_PORT" "$APP_PORT" "$VITE_PORT"; do
   free_port "$port"
 done
+if [ "${VITE_HTTPS:-false}" = true ]; then
+  free_port "${VITE_MINIO_CONSOLE_HTTPS_PORT:-9444}"
+  free_port "${VITE_APISIX_DASHBOARD_HTTPS_PORT:-9181}"
+  free_port "${MINIO_API_HTTPS_PORT:-9445}"
+fi
 sleep 1
 
 # ---- 基础设施 ----
 log "启动基础设施（PostgreSQL / Redis / MinIO / etcd / APISIX）"
-docker compose --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait
+if [ "${VITE_HTTPS:-false}" = true ]; then
+  docker compose --profile ops-https --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait
+else
+  docker compose --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait
+fi
 
 log "创建 MinIO bucket：$MINIO_BUCKET"
 docker exec kaifang-meta-minio mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
@@ -107,10 +129,18 @@ printf 'worker %s\n' "$WORKER_PID" >> "$PID_FILE"
 FRONTEND_PID=$!
 printf 'frontend %s\n' "$FRONTEND_PID" >> "$PID_FILE"
 
-log "前端      http://localhost:$VITE_PORT"
+FRONTEND_SCHEME=http
+[ "${VITE_HTTPS:-false}" = true ] && FRONTEND_SCHEME=https
+log "前端      $FRONTEND_SCHEME://localhost:$VITE_PORT"
 log "后端      http://localhost:$APP_PORT/docs"
 log "认证      http://localhost:$APISIX_HTTP_PORT/kaifang-meta/iam/.well-known/openid-configuration"
-log "MinIO     http://localhost:$MINIO_CONSOLE_PORT"
-log "APISIX    http://localhost:$APISIX_ADMIN_PORT/ui/"
+if [ "$FRONTEND_SCHEME" = https ]; then
+  log "MinIO     https://localhost:${VITE_MINIO_CONSOLE_HTTPS_PORT:-9444}"
+  log "MinIO API https://localhost:${MINIO_API_HTTPS_PORT:-9445}"
+  log "APISIX    https://localhost:${VITE_APISIX_DASHBOARD_HTTPS_PORT:-9181}/ui/"
+else
+  log "MinIO     http://localhost:$MINIO_CONSOLE_PORT"
+  log "APISIX    http://localhost:$APISIX_ADMIN_PORT/ui/"
+fi
 log "etcd UI   http://localhost:${ETCD_WORKBENCH_PORT:-9010}"
 wait

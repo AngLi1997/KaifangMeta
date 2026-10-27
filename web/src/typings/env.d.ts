@@ -8,6 +8,9 @@ interface ImportMetaEnv {
   readonly VITE_BASE_API: string
   /** 开发服务器端口 */
   readonly VITE_PORT: string
+  /** 运维看板 HTTPS 反代端口 */
+  readonly VITE_MINIO_CONSOLE_HTTPS_PORT?: string
+  readonly VITE_APISIX_DASHBOARD_HTTPS_PORT?: string
   /** 是否开启打包压缩 */
   readonly VITE_BUILD_COMPRESS?: 'Y' | 'N'
   /** 压缩算法类型 */

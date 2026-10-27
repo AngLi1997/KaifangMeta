@@ -91,6 +91,8 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str = "minioadmin"
     MINIO_BUCKET: str = "kaifang-meta-platform"
     MINIO_SECURE: bool = False
+    MINIO_PUBLIC_ENDPOINT: str = "127.0.0.1:9000"
+    MINIO_PUBLIC_SECURE: bool = False
 
     DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 

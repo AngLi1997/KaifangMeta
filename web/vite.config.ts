@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig, loadEnv } from 'vite'
 import { createVitePlugins } from './build/plugins'
@@ -24,6 +25,12 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: Number(env.VITE_PORT),
       strictPort: true,
+      https: env.VITE_HTTPS === 'true'
+        ? {
+            cert: readFileSync(resolve(envDir, env.VITE_HTTPS_CERT || '.certs/kaifang-meta.crt')),
+            key: readFileSync(resolve(envDir, env.VITE_HTTPS_KEY || '.certs/kaifang-meta.key')),
+          }
+        : undefined,
       proxy: {
         // 认证与控制台 API 均经 APISIX（模式 A），与生产链路一致
         '/kaifang-meta': { target: `http://127.0.0.1:${env.APISIX_HTTP_PORT}` },

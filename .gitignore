@@ -1,5 +1,6 @@
 __pycache__/
 .env
+.certs/
 .idea/
 venv/
 .mypy_cache/

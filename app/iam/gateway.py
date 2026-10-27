@@ -94,12 +94,20 @@ def _resources(console: Client) -> list[tuple[str, dict]]:
 async def sync_platform_routes() -> None:
     """下发失败抛出 httpx.HTTPError：启动时由调用方告警，新建租户时随请求失败回滚"""
     # shortcut: 无「待下发」状态与定时对账；应用接入落地后改为退避重试 + 定时对账
+    console = await Client.get(client_id=settings.CONSOLE_CLIENT_ID)
+    redirect_uris = [uri.strip() for uri in settings.CONSOLE_REDIRECT_URIS.split(",") if uri.strip()]
+    post_logout_redirect_uris = [
+        uri.strip() for uri in settings.CONSOLE_POST_LOGOUT_REDIRECT_URIS.split(",") if uri.strip()
+    ]
+    if console.redirect_uris != redirect_uris or console.post_logout_redirect_uris != post_logout_redirect_uris:
+        console.redirect_uris = redirect_uris
+        console.post_logout_redirect_uris = post_logout_redirect_uris
+        await console.save(update_fields=["redirect_uris", "post_logout_redirect_uris"])
     if not settings.APISIX_ADMIN_KEY:
         logger.warning("未配置 APISIX_ADMIN_KEY，跳过网关路由下发")
         return
     headers = {"X-API-KEY": settings.APISIX_ADMIN_KEY}
     async with httpx.AsyncClient(base_url=f"{settings.APISIX_ADMIN_URL}/apisix/admin", timeout=5) as client:
-        console = await Client.get(client_id=settings.CONSOLE_CLIENT_ID)
         for path, body in _resources(console):
             resp = await client.put(f"/{path}", json=body, headers=headers)
             resp.raise_for_status()

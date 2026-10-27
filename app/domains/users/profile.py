@@ -37,7 +37,7 @@ async def get_userinfo():
     ]
     if user_obj.avatar:
         data["avatar"] = await run_in_threadpool(
-            get_minio_client().presigned_get_object,
+            get_minio_client(public=True).presigned_get_object,
             settings.MINIO_BUCKET,
             user_obj.avatar,
         )
@@ -76,7 +76,9 @@ async def upload_avatar(file: UploadFile = File(...)):
     )
     user.avatar = object_name
     await user.save()
-    avatar = await run_in_threadpool(client.presigned_get_object, settings.MINIO_BUCKET, object_name)
+    avatar = await run_in_threadpool(
+        get_minio_client(public=True).presigned_get_object, settings.MINIO_BUCKET, object_name
+    )
     return Success(msg="头像已更新", data={"avatar": avatar})
 
 

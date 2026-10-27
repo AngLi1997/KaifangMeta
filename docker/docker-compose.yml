@@ -62,6 +62,23 @@ services:
     ports:
       - "${MINIO_CONSOLE_PORT}:9001"
 
+  ops-console-https:
+    image: nginx:1.27-alpine
+    container_name: kaifang-meta-ops-console-https
+    restart: unless-stopped
+    profiles: ["ops-https"]
+    depends_on:
+      - minio
+      - apisix
+    volumes:
+      - ./docker/ops-console-https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./.certs/kaifang-meta.crt:/etc/nginx/certs/tls.crt:ro
+      - ./.certs/kaifang-meta.key:/etc/nginx/certs/tls.key:ro
+    ports:
+      - "${VITE_MINIO_CONSOLE_HTTPS_PORT:-9444}:9444"
+      - "${VITE_APISIX_DASHBOARD_HTTPS_PORT:-9181}:9181"
+      - "${MINIO_API_HTTPS_PORT:-9445}:9445"
+
   etcd:
     image: quay.io/coreos/etcd:v3.5.17
     container_name: kaifang-meta-etcd

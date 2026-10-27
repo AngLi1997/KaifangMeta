@@ -15,13 +15,15 @@
 
 ### 本地运维控制台
 
-本地开发 Compose 提供以下入口，Admin API、etcd 与 etcd Workbench 仅绑定 `127.0.0.1`：
+本地开发 Compose 提供以下入口，APISIX Admin API 直连端口、etcd 与 etcd Workbench 仅绑定 `127.0.0.1`：
 
 | 控制台 | 地址 | 说明 |
 |------|------|------|
 | MinIO | `http://localhost:9001` | MinIO Console |
 | APISIX | `http://localhost:9180/ui/` | APISIX 3.13+ 内嵌 Dashboard，使用 `.env` 中的 `APISIX_ADMIN_KEY` |
 | etcd | `http://localhost:9010` | etcd Workbench；首次进入后添加 endpoint `http://etcd:2379` |
+
+设 `VITE_HTTPS=true` 后，`start-service.sh` 还会启用 `ops-https` 反代：MinIO Console 使用 HTTPS 端口 `9444`，MinIO S3 API 使用 `9445`，APISIX Dashboard / Admin API 使用 `9181`。这些端口可供局域网设备访问；APISIX 仍校验随机 `APISIX_ADMIN_KEY`，每台浏览器首次打开 Dashboard 时需在 Settings 中填写。浏览器预签名文件 URL 使用 `.env` 中的 `MINIO_PUBLIC_ENDPOINT` / `MINIO_PUBLIC_SECURE`，需指向可从访问设备到达的 HTTPS S3 API。自签 CA 需在访问设备上手动信任。
 
 etcd Workbench Web 版已停止维护，仅供本地开发调试；生产环境应限制管理入口网络访问。
 
