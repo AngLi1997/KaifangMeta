@@ -4,7 +4,7 @@ import { useAppStore } from '@/store'
 const router = useRouter()
 const appStore = useAppStore()
 
-const name = import.meta.env.VITE_APP_NAME
+const name = import.meta.env.APP_TITLE
 const logo = '/kaifangdata-logo.png'
 
 const hidenLogoText = computed(() => {

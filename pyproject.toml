@@ -1,7 +1,7 @@
 [project]
 name = "kaifang-meta-platform"
 version = "0.1.0"
-description = "KaifangMetaPlatform"
+description = "KaifangMeta"
 authors = [
     {name = "mizhexiaoxiao", email = "mizhexiaoxiao@gmail.com"},
 ]
@@ -85,4 +85,3 @@ lint.ignore = [
     "F403",
     "F405",
 ]
-

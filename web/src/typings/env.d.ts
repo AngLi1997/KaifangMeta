@@ -3,7 +3,7 @@ interface ImportMetaEnv {
   /** 项目基本地址 */
   readonly VITE_BASE_URL: string
   /** 项目标题 */
-  readonly VITE_APP_NAME: string
+  readonly APP_TITLE: string
   /** 控制台 API 前缀（经网关） */
   readonly VITE_BASE_API: string
   /** 开发服务器端口 */
@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   /** 运维看板 HTTPS 反代端口 */
   readonly VITE_MINIO_CONSOLE_HTTPS_PORT?: string
   readonly VITE_APISIX_DASHBOARD_HTTPS_PORT?: string
+  readonly VITE_ETCD_WORKBENCH_HTTPS_PORT?: string
   /** 是否开启打包压缩 */
   readonly VITE_BUILD_COMPRESS?: 'Y' | 'N'
   /** 压缩算法类型 */

@@ -1,9 +1,9 @@
 ---
 name: kaifang-meta-development
-description: KaifangMetaPlatform 全栈功能开发与 bug 修复规范：先追踪现有实现和受影响流程，改动后验证真实端到端完整流程并清理临时测试脚本。只要在本仓库开发或修复 `app/`、`web/`、`alembic/`、`docker/` 等产品代码，都应先使用本 skill。
+description: KaifangMeta 全栈功能开发与 bug 修复规范：先追踪现有实现和受影响流程，改动后验证真实端到端完整流程并清理临时测试脚本。只要在本仓库开发或修复 `app/`、`web/`、`alembic/`、`docker/` 等产品代码，都应先使用本 skill。
 ---
 
-# KaifangMetaPlatform 开发规范
+# KaifangMeta 开发规范
 
 ## 开始前
 

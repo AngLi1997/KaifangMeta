@@ -1,5 +1,5 @@
 #!/bin/sh
-# KaifangMetaPlatform 本地启动：基础设施（Docker）+ 数据库迁移 + 前后端源码启动
+# KaifangMeta 本地启动：基础设施（Docker）+ 数据库迁移 + 前后端源码启动
 # 用法：sh start-service.sh        sh stop-service.sh 停止前后端（基础设施容器保持运行）
 set -e
 
@@ -70,22 +70,23 @@ done
 if [ "${VITE_HTTPS:-false}" = true ]; then
   free_port "${VITE_MINIO_CONSOLE_HTTPS_PORT:-9444}"
   free_port "${VITE_APISIX_DASHBOARD_HTTPS_PORT:-9181}"
-  free_port "${MINIO_API_HTTPS_PORT:-9445}"
+  free_port "${VITE_ETCD_WORKBENCH_HTTPS_PORT:-9011}"
 fi
 sleep 1
 
 # ---- 基础设施 ----
 log "启动基础设施（PostgreSQL / Redis / MinIO / etcd / APISIX）"
 if [ "${VITE_HTTPS:-false}" = true ]; then
-  docker compose --profile ops-https --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait
+  docker compose --profile ops-https --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait --remove-orphans
 else
-  docker compose --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait
+  docker compose --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" up -d --wait --remove-orphans
+  # profile 服务不算孤儿，切回 HTTP 时需显式移除
+  docker compose --profile ops-https --project-directory "$ROOT" -f "$ROOT/docker/docker-compose.yml" rm -sf ops-console-https >/dev/null 2>&1 || true
 fi
 
 log "创建 MinIO bucket：$MINIO_BUCKET"
 docker exec kaifang-meta-minio mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
 docker exec kaifang-meta-minio mc mb --ignore-existing "local/$MINIO_BUCKET" >/dev/null
-log "etcd 控制台 http://localhost:${ETCD_WORKBENCH_PORT:-9010}（首次登录后连接 etcd:2379）"
 
 # km-* 插件以挂载方式加载，重载使本地改动生效（生产随网关镜像发布）
 docker exec kaifang-meta-apisix apisix reload >/dev/null 2>&1 || true
@@ -136,11 +137,11 @@ log "后端      http://localhost:$APP_PORT/docs"
 log "认证      http://localhost:$APISIX_HTTP_PORT/kaifang-meta/iam/.well-known/openid-configuration"
 if [ "$FRONTEND_SCHEME" = https ]; then
   log "MinIO     https://localhost:${VITE_MINIO_CONSOLE_HTTPS_PORT:-9444}"
-  log "MinIO API https://localhost:${MINIO_API_HTTPS_PORT:-9445}"
   log "APISIX    https://localhost:${VITE_APISIX_DASHBOARD_HTTPS_PORT:-9181}/ui/"
+  log "etcd UI   https://localhost:${VITE_ETCD_WORKBENCH_HTTPS_PORT:-9011}"
 else
   log "MinIO     http://localhost:$MINIO_CONSOLE_PORT"
   log "APISIX    http://localhost:$APISIX_ADMIN_PORT/ui/"
+  log "etcd UI   http://localhost:${ETCD_WORKBENCH_PORT:-9010}"
 fi
-log "etcd UI   http://localhost:${ETCD_WORKBENCH_PORT:-9010}"
 wait

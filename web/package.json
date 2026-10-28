@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "KaifangMetaPlatform 平台控制台前端（基于 nova-admin）",
+  "description": "KaifangMeta 平台控制台前端（基于 nova-admin）",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

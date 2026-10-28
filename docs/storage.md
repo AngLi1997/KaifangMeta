@@ -56,7 +56,7 @@ mc ilm rule add --prefix "capability/" --expire-days 30 local/kaifang-meta-platf
 
 - 桶策略私有、无匿名访问；只有平台服务账号持有 MinIO 凭据，Worker、算子节点各用最小权限账号（按业务目录前缀授权）。
 - 上传：业务后端调用平台接口申请上传 URL，平台按调用方 `client_id` 与 `tid` 生成路径并签发（15 分钟有效）；下载同理，平台校验对象属于调用方后签发。
-- 平台内部读写使用 `MINIO_ENDPOINT`；发给浏览器的预签名 URL 使用 `MINIO_PUBLIC_ENDPOINT` / `MINIO_PUBLIC_SECURE`，该入口必须可从访问设备直接到达。
+- MinIO 地址只有一个 `MINIO_ENDPOINT` / `MINIO_SECURE`：平台读写和签名都用它。数据库只存对象路径；发给浏览器的预签名 URL 只含路径与签名参数（`/{桶}/{对象路径}?X-Amz-…`），由访问入口（开发为 Vite，生产为 web nginx）同源转发到 `MINIO_ENDPOINT`，并把 `Host` 改为该地址以通过签名校验；浏览器协议与主机随访问入口变化，无需单独配置。
 - 业务系统自己的原件存放在业务自己的对象存储，不进入本桶；部署上共用 MinIO 集群时也必须是独立的桶与账号，见 [多应用设计](apps.md)。
 
 ## 示例：一份档案扫描件的存放位置

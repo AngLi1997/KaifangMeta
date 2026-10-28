@@ -1,9 +1,9 @@
 ---
 name: kaifang-meta-ui
-description: KaifangMetaPlatform 前端（web/，基于 nova-admin）的 UI 开发规范：设计语言统一为 nova-admin 风格，优先复用 nova-admin 已有的布局、组件、hooks、指令，列表页 / 弹窗 / 抽屉 / 树表的标准写法，按钮权限码，图标与配色约定，新增页面与菜单的流程。只要在 web/ 下新增或修改页面、组件、样式、路由、菜单、权限，或为原型 / 新功能设计界面，都应先使用本 skill，即使用户没有明确提到“UI 规范”或 nova-admin。
+description: KaifangMeta 前端（web/，基于 nova-admin）的 UI 开发规范：设计语言统一为 nova-admin 风格，优先复用 nova-admin 已有的布局、组件、hooks、指令，列表页 / 弹窗 / 抽屉 / 树表的标准写法，按钮权限码，图标与配色约定，新增页面与菜单的流程。只要在 web/ 下新增或修改页面、组件、样式、路由、菜单、权限，或为原型 / 新功能设计界面，都应先使用本 skill，即使用户没有明确提到“UI 规范”或 nova-admin。
 ---
 
-# KaifangMetaPlatform UI 开发规范
+# KaifangMeta UI 开发规范
 
 前端 `web/` 以 [nova-admin](https://github.com/chansee97/nova-admin)（MIT，见 `web/LICENSE-nova-admin`）为基座：Vue 3 + TypeScript + Vite + Naive UI + UnoCSS + alova + pro-naive-ui（布局）。**所有界面的风格与设计语言统一为 nova-admin 风格**；新代码要让人看不出“哪页是后加的”。
 

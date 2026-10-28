@@ -24,9 +24,9 @@ def login_page(query: str, username: str = "", error: str = "") -> HTMLResponse:
     err = f'<p class="err" role="alert">{escape(error)}</p>' if error else ""
     html = f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>登录 | KaifangMetaPlatform</title><style>{STYLE}</style></head>
+<title>登录 | KaifangMeta</title><style>{STYLE}</style></head>
 <body><form method="post" action="/kaifang-meta/iam/login">
-<h1>KaifangMetaPlatform</h1>
+<h1>KaifangMeta</h1>
 <input name="username" value="{escape(username)}" placeholder="账号" aria-label="账号" autocomplete="username" required autofocus>
 <input name="password" type="password" placeholder="密码" aria-label="密码" autocomplete="current-password" required>
 {err}<input type="hidden" name="q" value="{escape(query)}">
@@ -48,7 +48,7 @@ def tenant_page(params: dict, tenants: list[tuple[str, str]], current: str = "")
     )
     html = f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>选择租户 | KaifangMetaPlatform</title><style>{STYLE}</style></head>
+<title>选择租户 | KaifangMeta</title><style>{STYLE}</style></head>
 <body><form method="get" action="/kaifang-meta/iam/authorize">
 <h1>选择租户</h1>{hidden}{buttons}
 </form></body></html>"""

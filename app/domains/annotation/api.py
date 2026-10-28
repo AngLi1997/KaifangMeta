@@ -14,7 +14,7 @@ from app.domains.annotation.schemas import ItemSave, TaskCreate, TemplateCreate,
 from app.domains.users.models import User
 from app.schemas import Success, SuccessExtra
 from app.settings import settings
-from app.utils.storage import get_minio_client
+from app.utils.storage import get_minio_client, presigned_url
 
 router = APIRouter()
 
@@ -228,9 +228,7 @@ async def get_item(task_id: int = Query(...), id: int = Query(None, description=
     data = dict(item.data)
     for key, value in data.items():
         if value == FILE_REF:
-            data[key] = await run_in_threadpool(
-                get_minio_client(public=True).presigned_get_object, settings.MINIO_BUCKET, item.file
-            )
+            data[key] = await run_in_threadpool(presigned_url, item.file)
     prev_item = await items.filter(id__lt=item.id).order_by("-id").first()
     next_item = await items.filter(id__gt=item.id).order_by("id").first()
     return Success(

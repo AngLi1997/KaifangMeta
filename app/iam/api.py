@@ -15,6 +15,17 @@ from .page import login_page, message_page, tenant_page
 
 PREFIX = "/kaifang-meta/iam"
 COOKIE = "km_sso"
+
+
+def _https(request: Request) -> bool:
+    return request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+
+
+def _cookie(request: Request) -> str:
+    # HTTP 访问用另一个名字：同主机已有 Secure 的 km_sso 时，浏览器不允许 HTTP 页面写同名 Cookie
+    return COOKIE if _https(request) else f"{COOKIE}_http"
+
+
 TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange"
 ACCESS_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token"
 
@@ -75,7 +86,7 @@ async def authorize(
     if response_type != "code" or code_challenge_method != "S256" or not code_challenge:
         return _redirect(redirect_uri, error="invalid_request", state=state)
 
-    sid = request.cookies.get(COOKIE)
+    sid = request.cookies.get(_cookie(request))
     session = await sessions.get_sso_session(sid)
     if session:
         # 一个 Token 只含一个 tid：单租户直接进入；多租户首次登录或 prompt=select_tenant 时选择，否则沿用会话上次的租户
@@ -113,7 +124,7 @@ async def authorize(
 
 
 @router.post("/login", summary="账号密码登录，建立 SSO 会话")
-async def login(username: str = Form(...), password: str = Form(...), q: str = Form("")):
+async def login(request: Request, username: str = Form(...), password: str = Form(...), q: str = Form("")):
     try:
         account = await service.authenticate(username, password)
     except service.AccountError as e:
@@ -124,12 +135,13 @@ async def login(username: str = Form(...), password: str = Form(...), q: str = F
     sid = await sessions.create_sso_session(account["sub"], "")
     response = RedirectResponse(f"{PREFIX}/authorize?{q}", status_code=303)
     response.set_cookie(
-        COOKIE,
+        _cookie(request),
         sid,
         max_age=settings.IAM_SSO_SESSION_TTL,
         path=PREFIX,
         httponly=True,
-        secure=settings.IAM_COOKIE_SECURE,
+        # 跟随访问协议：HTTPS 访问才加 Secure，HTTP 局域网访问也能保存会话
+        secure=_https(request),
         samesite="lax",
     )
     return response
@@ -242,7 +254,7 @@ async def _token_exchange(
 
 @router.get("/logout", summary="退出：吊销 sid 与全部 Refresh Token")
 async def logout(request: Request, client_id: str = "", post_logout_redirect_uri: str = ""):
-    sid = request.cookies.get(COOKIE)
+    sid = request.cookies.get(_cookie(request))
     if sid:
         await sessions.revoke_sid(sid)
     client = await _active_client(client_id) if client_id else None
@@ -250,5 +262,5 @@ async def logout(request: Request, client_id: str = "", post_logout_redirect_uri
         response = RedirectResponse(post_logout_redirect_uri, status_code=302)
     else:
         response = message_page("已退出登录", status_code=200)
-    response.delete_cookie(COOKIE, path=PREFIX)
+    response.delete_cookie(_cookie(request), path=PREFIX)
     return response

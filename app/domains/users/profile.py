@@ -12,7 +12,7 @@ from app.domains.users.schemas import UpdatePassword
 from app.iam import service as iam
 from app.schemas.base import Fail, Success
 from app.settings import settings
-from app.utils.storage import get_minio_client
+from app.utils.storage import get_minio_client, presigned_url
 
 router = APIRouter()
 MAX_AVATAR_SIZE = 2 * 1024 * 1024
@@ -36,11 +36,7 @@ async def get_userinfo():
         {"id": tid, "name": name} for tid, name in await iam.tenant_names(await iam.account_tenants(user_obj.sub))
     ]
     if user_obj.avatar:
-        data["avatar"] = await run_in_threadpool(
-            get_minio_client(public=True).presigned_get_object,
-            settings.MINIO_BUCKET,
-            user_obj.avatar,
-        )
+        data["avatar"] = await run_in_threadpool(presigned_url, user_obj.avatar)
     return Success(data=data)
 
 
@@ -76,9 +72,7 @@ async def upload_avatar(file: UploadFile = File(...)):
     )
     user.avatar = object_name
     await user.save()
-    avatar = await run_in_threadpool(
-        get_minio_client(public=True).presigned_get_object, settings.MINIO_BUCKET, object_name
-    )
+    avatar = await run_in_threadpool(presigned_url, object_name)
     return Success(msg="头像已更新", data={"avatar": avatar})
 
 

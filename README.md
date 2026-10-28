@@ -59,7 +59,7 @@ HTML 浏览器直接打开即可，例如：
 open docs/design/prototype.html#ar-import
 ```
 
-## KaifangMetaPlatform（平台代码）
+## KaifangMeta（平台代码）
 
 仓库根目录是平台进程的代码：后端 FastAPI（Python 3.11+，基于 [vue-fastapi-admin](https://github.com/mizhexiaoxiao/vue-fastapi-admin) 改造），前端以 [nova-admin](https://github.com/chansee97/nova-admin)（MIT，`web/LICENSE-nova-admin`）为基座：Vue 3 + TypeScript + Naive UI + UnoCSS。
 
@@ -77,7 +77,7 @@ open docs/design/prototype.html#ar-import
 | 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
 | 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口） |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
-| 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444、S3 API 9445）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181） |
+| 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181）、etcd Workbench（HTTPS 9011） |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |
 | 端口 | 前端 3001，后端 8080 |
 | 前端规范 | 设计语言统一为 nova-admin 风格，优先复用其组件，见 skill [kaifang-meta-ui](.agents/skills/kaifang-meta-ui/SKILL.md) |
@@ -92,7 +92,7 @@ sh start-service.sh
 
 脚本依次：生成 `.env`（如缺失，并生成各签名密钥）→ 停止上次启动的后端、worker 与前端 → 释放被占用的端口（停止其他容器或进程）→ 启动基础设施并重载网关插件 → 创建 bucket → `alembic upgrade head` → 源码启动后端（启动时下发网关路由）、worker 与前端。运行 `sh stop-service.sh` 可停止这三个进程；基础设施可在仓库根目录执行 `docker compose --project-directory . -f docker/docker-compose.yml down` 停止。
 
-浏览器访问前端 3001：`/kaifang-meta/*` 由 Vite 代理到 APISIX，登录、Token、控制台 API 与生产链路一致。Token 只存内存，到期前 2 分钟自动续期，刷新页面经 `prompt=none` 静默恢复。局域网通过 IP 访问时必须启用 HTTPS（浏览器仅在安全上下文提供 PKCE 所需的 WebCrypto），并在访问设备上信任证书；同时将 `VITE_HTTPS=true`、`IAM_COOKIE_SECURE=true`，将 IP 对应的 HTTPS 回调地址加入 `.env` 中 `CONSOLE_REDIRECT_URIS` 与 `CONSOLE_POST_LOGOUT_REDIRECT_URIS`，重启服务。HTTPS 模式也会启用 MinIO（默认端口 9444）与 APISIX Dashboard（默认端口 9181）的 TLS 反代；APISIX Dashboard 在每台浏览器首次打开时需在 Settings 中填入 `.env` 的 `APISIX_ADMIN_KEY`。
+浏览器访问前端 3001：`/kaifang-meta/*` 由 Vite 代理到 APISIX，登录、Token、控制台 API 与生产链路一致。Token 只存内存，到期前 2 分钟自动续期，刷新页面经 `prompt=none` 静默恢复。局域网通过 IP 访问时，把 IP 对应的回调地址（协议与 `VITE_HTTPS` 一致）加入 `.env` 中 `CONSOLE_REDIRECT_URIS` 与 `CONSOLE_POST_LOGOUT_REDIRECT_URIS` 并重启服务；HTTP 与 HTTPS 均可访问，SSO Cookie 的 Secure 跟随访问协议。HTTP 访问时运维看板直连 MinIO 9001、APISIX 9180、etcd Workbench 9010；设 `VITE_HTTPS=true` 后改走 MinIO（9444）、APISIX Dashboard（9181）和 etcd Workbench（9011）的 TLS 反代，访问设备需信任证书。Workbench 的 etcd 连接在页面内配置。APISIX Dashboard 在每台浏览器首次打开时需在 Settings 中填入 `.env` 的 `APISIX_ADMIN_KEY`。
 
 | 地址 | 说明 |
 |------|------|

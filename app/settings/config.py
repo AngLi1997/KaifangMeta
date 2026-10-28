@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     VERSION: str = "0.1.0"
     APP_TITLE: str = "KaifangMeta"
-    PROJECT_NAME: str = "KaifangMetaPlatform"
+    PROJECT_NAME: str = "KaifangMeta"
     APP_DESCRIPTION: str = "kaifang-meta 中台平台"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8080
@@ -38,7 +38,6 @@ class Settings(BaseSettings):
     IAM_ACCESS_TOKEN_TTL: int = 15 * 60
     IAM_REFRESH_TOKEN_TTL: int = 8 * 60 * 60
     IAM_SSO_SESSION_TTL: int = 8 * 60 * 60
-    IAM_COOKIE_SECURE: bool = False
     IAM_SERVICE_TOKEN_TTL: int = 10 * 60
     IAM_KEY_CACHE_TTL: int = 5 * 60
     # 平台自身作为 Service Token / 代表用户 Token 的 aud，平台 API 路由的网关签名密钥
@@ -91,8 +90,6 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str = "minioadmin"
     MINIO_BUCKET: str = "kaifang-meta-platform"
     MINIO_SECURE: bool = False
-    MINIO_PUBLIC_ENDPOINT: str = "127.0.0.1:9000"
-    MINIO_PUBLIC_SECURE: bool = False
 
     DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 

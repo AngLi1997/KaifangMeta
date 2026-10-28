@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 仓库性质
 
-这是一个**中台架构设计文档仓库**，根目录同时包含平台代码 KaifangMetaPlatform（后端基于 vue-fastapi-admin 改造的 FastAPI，前端基于 nova-admin），启动方式见 `README.md`。
+这是一个**中台架构设计文档仓库**，根目录同时包含平台代码 KaifangMeta（后端基于 vue-fastapi-admin 改造的 FastAPI，前端基于 nova-admin），启动方式见 `README.md`。
 
 - `README.md` — 入口：总体拆分摘要 + 文档目录（每个文档的作用见此处，不在本文件重复）+ 控制台代码启动说明
 - `sdk/` — 按语言存放并独立发布的平台 SDK：Python `sdk/python/kaifang-meta-sdk/`、Java `sdk/java/kaifang-meta-spring-boot-starter/`、TypeScript `sdk/typescript/kaifang-meta-shell/`；各子项目维护自己的构建配置与版本，通过对应私服供业务系统引用，不把 SDK 源码复制进业务系统仓库

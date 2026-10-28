@@ -15,7 +15,7 @@
 
 ### 本地运维控制台
 
-本地开发 Compose 提供以下入口，APISIX Admin API 直连端口、etcd 与 etcd Workbench 仅绑定 `127.0.0.1`：
+本地开发 Compose 提供以下入口；etcd `2379` 仅绑定 `127.0.0.1`，三个控制台端口对局域网开放，供 HTTP 访问时运维看板直连：
 
 | 控制台 | 地址 | 说明 |
 |------|------|------|
@@ -23,7 +23,7 @@
 | APISIX | `http://localhost:9180/ui/` | APISIX 3.13+ 内嵌 Dashboard，使用 `.env` 中的 `APISIX_ADMIN_KEY` |
 | etcd | `http://localhost:9010` | etcd Workbench；首次进入后添加 endpoint `http://etcd:2379` |
 
-设 `VITE_HTTPS=true` 后，`start-service.sh` 还会启用 `ops-https` 反代：MinIO Console 使用 HTTPS 端口 `9444`，MinIO S3 API 使用 `9445`，APISIX Dashboard / Admin API 使用 `9181`。这些端口可供局域网设备访问；APISIX 仍校验随机 `APISIX_ADMIN_KEY`，每台浏览器首次打开 Dashboard 时需在 Settings 中填写。浏览器预签名文件 URL 使用 `.env` 中的 `MINIO_PUBLIC_ENDPOINT` / `MINIO_PUBLIC_SECURE`，需指向可从访问设备到达的 HTTPS S3 API。自签 CA 需在访问设备上手动信任。
+设 `VITE_HTTPS=true` 后，`start-service.sh` 还会启用 `ops-https` 反代：MinIO Console 使用 HTTPS 端口 `9444`，APISIX Dashboard / Admin API 使用 `9181`，etcd Workbench 使用 `9011`。`VITE_HTTPS=false` 时 `start-service.sh` 会移除该反代容器。运维看板按访问协议选择入口：HTTP 直连原端口，HTTPS 走 TLS 反代；Workbench 页面内配置 etcd 连接。运维入口应限制在可信网络，访问设备需信任 HTTPS 证书。APISIX 仍校验随机 `APISIX_ADMIN_KEY`，每台浏览器首次打开 Dashboard 时需在 Settings 中填写。浏览器预签名文件 URL 只含路径，经前端同源转发到 MinIO（见 [对象存储路径](storage.md)「访问规则」），无需单独暴露 S3 API。
 
 etcd Workbench Web 版已停止维护，仅供本地开发调试；生产环境应限制管理入口网络访问。
 
