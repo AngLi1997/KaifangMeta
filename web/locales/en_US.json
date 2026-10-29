@@ -64,7 +64,12 @@
     "twoColumnLayout": "Two column layout",
     "mixedTwoColumnLayout": "Mixed two column layout",
     "sidebarLayout": "Sidebar layout",
-    "mixedSidebarLayout": "Mixed sidebar layout"
+    "mixedSidebarLayout": "Mixed sidebar layout",
+    "switchTenant": "Switch tenant",
+    "welcomeBack": "Welcome back, {name}",
+    "searchApp": "Search apps",
+    "noApps": "No accessible apps in this tenant. Contact your tenant admin.",
+    "noMatchApps": "No matching apps"
   },
   "login": {
     "signInTitle": "Login",

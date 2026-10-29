@@ -143,12 +143,17 @@ function handleMouseEnter(index: number) {
 </script>
 
 <template>
-  <CommonWrapper @click="openModal">
-    <icon-park-outline-search />
-    <n-tag v-if="!appStore.isMobile" round size="small" class="font-mono cursor-pointer">
-      CtrlK
-    </n-tag>
-  </CommonWrapper>
+  <!-- 与门户搜索框同一形态：只作触发器，点击或 Ctrl+K 打开搜索弹窗 -->
+  <n-input round readonly class="w-60! cursor-pointer" :placeholder="$t('app.searchPlaceholder')" @click="openModal">
+    <template #prefix>
+      <icon-park-outline-search />
+    </template>
+    <template #suffix>
+      <n-tag v-if="!appStore.isMobile" round size="small" class="font-mono cursor-pointer">
+        CtrlK
+      </n-tag>
+    </template>
+  </n-input>
   <n-modal
     v-model:show="showModal"
     class="w-560px fixed top-60px inset-x-0 max-w-full"

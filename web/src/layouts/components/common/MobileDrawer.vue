@@ -2,8 +2,10 @@
 import Search from '../header/Search.vue'
 import UserCenter from '../header/UserCenter.vue'
 import Setting from './Setting.vue'
+import { useAuthStore } from '@/store'
 
 const showDrawer = defineModel<boolean>('show', { default: false })
+const authStore = useAuthStore()
 </script>
 
 <template>
@@ -16,9 +18,14 @@ const showDrawer = defineModel<boolean>('show', { default: false })
   >
     <n-drawer-content :native-scrollbar="false" :body-content-style="{ padding: '0' }">
       <template #header>
-        <div class="flex items-center">
-          <UserCenter />
-          <div class="ml-auto" />
+        <div class="flex flex-col items-start gap-3">
+          <UserCenter
+            :name="authStore.userInfo?.alias || authStore.userInfo?.username || ''"
+            :avatar="authStore.userInfo?.avatar"
+            :tenant-id="authStore.userInfo?.tenant_id"
+            :tenants="authStore.userInfo?.tenants"
+            show-user-center
+          />
           <Search />
         </div>
       </template>

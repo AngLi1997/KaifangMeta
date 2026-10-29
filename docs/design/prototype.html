@@ -344,7 +344,7 @@ const pages = {
 
   portal: () => `<div class="portal">${topbar('KM', '统一门户', '<b>应用</b>')}
     <div class="pbody">
-      <div class="bar"><b style="font-size:15px">admin</b><span class="mu">平台管理员身份 · 上次登录 10-27 09:00</span></div>
+      <div class="bar"><b style="font-size:15px">admin</b><span class="sp" style="flex:1"></span><select class="inp" style="width:auto"><option>省档案馆</option><option>市档案馆</option></select></div>
       <div class="apps">
         ${[['KM', '中台控制台', '用户 · 能力 · 采集 · 调度', '#users'], ['档', '智慧档案室', '著录 · 检索 · 问答', '#ar-home'],
            ['文', '文书加工系统', '原型未绘制'], ['问', '政策法规问答', '网页版 Agent', '#agent-chat'], ['统', '统建系统', '原型未绘制'], ['库', '库房管理', '原型未绘制'], ['AI', 'kaifang-harness', 'Agent 桌面端 · 下载客户端', '#download']]
@@ -372,11 +372,11 @@ const pages = {
     ]), true),
 
   apps: () => ph('应用接入', '', '<button class="btn">导入 YAML</button><button class="btn pri">注册应用</button>') +
-    card('已接入应用', T(['应用', 'client_id', '鉴权模式', '开通租户', '网关前缀', '实例', '状态', ''], [
-      ['<b>智慧档案室</b>', '<span class="m">kaifang-meta-archive-room</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/archive</span>', '<span class="m">2 / 2</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
-      ['文书加工系统', '<span class="m">kaifang-meta-doc-process</span>', S('透传自验'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/doc</span>', '<span class="m">3 / 3</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
-      ['统建系统', '<span class="m">kaifang-meta-unified-build</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span> <span class="m mu">+2</span>', '<span class="m">/kaifang-meta/ub</span>', '<span class="m">1 / 2</span>', D('1 实例异常', 'warn'), '<a class="btn ghost">配置</a>'],
-      ['库房管理', '<span class="m">kaifang-meta-warehouse</span>', S('业务自管 · 2025-06 前迁移', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '<span class="m">/kaifang-meta/wh</span>', '<span class="m">2 / 2</span>', D('联调中', ''), '<a class="btn ghost">配置</a>'],
+    card('已接入应用', T(['应用', 'client_id', '鉴权模式', '开通租户', '访问范围', '网关前缀', '实例', '状态', ''], [
+      ['<b>智慧档案室</b>', '<span class="m">kaifang-meta-archive-room</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/archive</span>', '<span class="m">2 / 2</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['文书加工系统', '<span class="m">kaifang-meta-doc-process</span>', S('透传自验'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/doc</span>', '<span class="m">3 / 3</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['统建系统', '<span class="m">kaifang-meta-unified-build</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span> <span class="m mu">+2</span>', S('成员名单 · 36', 'ac'), '<span class="m">/kaifang-meta/ub</span>', '<span class="m">1 / 2</span>', D('1 实例异常', 'warn'), '<a class="btn ghost">配置</a>'],
+      ['库房管理', '<span class="m">kaifang-meta-warehouse</span>', S('业务自管 · 2025-06 前迁移', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/wh</span>', '<span class="m">2 / 2</span>', D('联调中', ''), '<a class="btn ghost">配置</a>'],
     ]), true) +
     `<div class="grid" style="grid-template-columns:repeat(3,1fr)">
       ${card('智慧档案室 · 接入配置<button class="btn sm">轮换密钥</button>', `<dl class="kv">
@@ -384,11 +384,13 @@ const pages = {
         <dt>鉴权模式</dt><dd>${S('网关托管', 'ac')}</dd>
         <dt>公开路径</dt><dd class="m">/health, /public/**</dd>
         <dt>开通租户</dt><dd class="bar">${S('t_5e2a9c1d7b3f4086 · 省档案馆')}</dd>
+        <dt>访问范围</dt><dd>全员</dd>
         <dt>回调地址</dt><dd class="m">https://archive.internal/callback</dd>
         <dt>授权方式</dt><dd class="m">authorization_code + PKCE, client_credentials</dd>
         <dt>上游节点</dt><dd class="m">10.20.3.11:8080, 10.20.3.12:8080</dd>
         <dt>健康检查</dt><dd class="m">GET /actuator/health · 5s</dd>
         <dt>密钥</dt><dd class="m mu">client ••3f9a · gateway ••71c2 · event ••0d5e</dd>
+        <dt>门户</dt><dd>档 · 著录 · 检索 · 问答 · https://archive.internal/</dd>
         <dt>SDK</dt><dd>${S('kaifang-meta-spring-boot-starter 1.4.2', 'ac')}</dd></dl>`)}
       ${card('平台权限<span><a class="btn sm" href="#space">应用空间</a> <button class="btn sm">申请变更</button></span>', `<dl class="kv">
         <dt>Scopes</dt><dd class="bar">${S('directory:read')}${S('capability:invoke')}${S('annotation:task.write')}${S('events:subscribe')}</dd>

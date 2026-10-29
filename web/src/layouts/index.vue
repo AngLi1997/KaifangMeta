@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAppStore, useRouteStore } from '@/store'
+import { useAppStore, useAuthStore, useRouteStore } from '@/store'
 import {
   BackTop,
   Breadcrumb,
@@ -18,6 +18,7 @@ import { ProLayout, useLayoutMenu } from 'pro-naive-ui'
 
 const route = useRoute()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 const routeStore = useRouteStore()
 
 const { layoutMode } = storeToRefs(useAppStore())
@@ -111,7 +112,13 @@ const hidenCollapaseButton = computed(() => ['horizontal'].includes(layoutMode.v
           <DarkModeSwitch />
           <LangsSwitch />
           <Setting />
-          <UserCenter />
+          <UserCenter
+            :name="authStore.userInfo?.alias || authStore.userInfo?.username || ''"
+            :avatar="authStore.userInfo?.avatar"
+            :tenant-id="authStore.userInfo?.tenant_id"
+            :tenants="authStore.userInfo?.tenants"
+            show-user-center
+          />
         </template>
       </div>
     </template>

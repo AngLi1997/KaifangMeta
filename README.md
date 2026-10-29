@@ -27,7 +27,8 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [多节点部署](docs/deployment.md) | 如何多机部署与发布 | Docker Compose、无状态、共享状态、缓存失效、高可用、降级 | 部分实现 |
 | **平台 · 认证** | | | |
 | [统一认证与身份](docs/platform/auth/identity.md) | 平台管账号与租户，业务管用户 | 身份账号维护、租户管理、`sub` 关联、轻租户 | 已实现 |
-| [应用接入](docs/platform/auth/app-onboarding.md) | 业务系统如何接入平台 | 应用描述 YAML、配置下发、接入流程、生命周期 | 部分实现 |
+| [应用接入](docs/platform/auth/app-onboarding.md) | 新应用如何接入认证、平台如何管理应用 | 前端壳与 SDK 接入、本地用户关联、应用访问判定（租户开通 + 成员名单）、应用描述、应用管理页面与接口、生命周期 | 部分实现 |
+| [统一门户](docs/platform/auth/portal.md) | 用户登录后从哪里进入各应用 | 门户页面、可见应用判定、登录落地、租户切换、接口 | 部分实现 |
 | [统一权限组件](docs/platform/auth/authz.md) | 菜单 / 按钮 / 数据权限怎么做 | 一套组件多份数据、数据模型、控制台内置角色、防越权 | 部分实现 |
 | **平台 · 能力 / AI** | | | |
 | [能力目录与下放](docs/platform/capability/catalog.md) | 能力如何登记、授权给业务 | 统一目录、应用空间、四层下放、数据范围、计量配额 | 设计中 |
@@ -75,7 +76,7 @@ open docs/design/prototype.html#ar-import
 |----|------|
 | 配置 | 只用根目录 `.env`（模板 `.env.example`），后端、前端、`docker/docker-compose.yml`、启动脚本共用 |
 | 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
-| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口） |
+| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口），`0020` 增加应用门户字段 |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
 | 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181）、etcd Workbench（HTTPS 9011） |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |
@@ -107,7 +108,8 @@ sh start-service.sh
 注册业务应用（机密客户端，密钥只显示一次）：
 
 ```bash
-uv run python -m app.iam.cli create-client --client-id kaifang-meta-archive-room --name 智慧档案室 --scopes directory:read,delegate:user
+uv run python -m app.iam.cli create-client --client-id kaifang-meta-archive-room --name 智慧档案室 --scopes directory:read,delegate:user \
+  --portal-entry https://archive.internal/ --portal-icon 档 --portal-description '著录 · 检索 · 问答'
 ```
 
 轮换签名密钥（新公钥立即进入 JWKS，各节点在 `IAM_KEY_CACHE_TTL` 内切换签名）：

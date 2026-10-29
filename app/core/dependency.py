@@ -49,6 +49,15 @@ def verify_gateway_identity(request: Request, secret: str) -> KmContext:
     return ctx
 
 
+async def gateway_user(request: Request) -> KmContext:
+    """只要求网关签名的用户身份，不要求控制台成员：统一门户等对所有身份账号开放的接口使用"""
+    ctx = verify_gateway_identity(request, settings.CONSOLE_GATEWAY_SECRET)
+    if ctx.principal_type != "user":
+        raise HTTPException(status_code=403, detail="控制台只接受用户身份")
+    CTX_TENANT_ID.set(ctx.tenant)
+    return ctx
+
+
 class AuthControl:
     """平台控制台（模式 A）：只信任网关签名的身份头，按 sub 关联本地用户"""
 
@@ -124,4 +133,5 @@ class PermissionControl:
 
 
 DependAuth = Depends(AuthControl.is_authed)
+DependGatewayUser = Depends(gateway_user)
 DependPermission = Depends(PermissionControl.has_permission)

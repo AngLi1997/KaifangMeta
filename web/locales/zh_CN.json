@@ -64,7 +64,12 @@
     "twoColumnLayout": "双栏布局",
     "mixedTwoColumnLayout": "混合双栏布局",
     "sidebarLayout": "侧边栏布局",
-    "mixedSidebarLayout": "双栏布局"
+    "mixedSidebarLayout": "双栏布局",
+    "switchTenant": "切换租户",
+    "welcomeBack": "欢迎回来，{name}",
+    "searchApp": "搜索应用",
+    "noApps": "当前租户下暂无可访问的应用，请联系租户管理员",
+    "noMatchApps": "没有匹配的应用"
   },
   "http": {
     "400": "请求出现语法错误",

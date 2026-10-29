@@ -141,6 +141,19 @@ async def tenant_names(ids: list[str]) -> list[tuple[str, str]]:
     return [(i, names.get(i, i)) for i in ids]
 
 
+async def accessible_apps(sub: str, tid: str) -> list[dict]:
+    """门户可进入的应用：与 /authorize 一致，应用启用且当前租户已开通；按 order、名称排序"""
+    # shortcut: 成员名单（access=members）与 testing / disabled 状态未实现，应用接入落地后在此统一判定
+    if tid not in await account_tenants(sub):
+        return []
+    apps = [
+        {"client_id": c.client_id, "name": c.name, "type": c.type, **c.portal}
+        for c in await Client.filter(status="active")
+        if tid in c.tenants and c.portal.get("entry")
+    ]
+    return sorted(apps, key=lambda a: (a.get("order", 100), a["name"]))
+
+
 async def tenant_is_active(tenant_id: str) -> bool:
     return await Tenant.filter(id=tenant_id, status="active").exists()
 

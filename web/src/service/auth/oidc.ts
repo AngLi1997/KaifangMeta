@@ -85,8 +85,8 @@ function saveTokens(value: TokenSet) {
   refreshTimer = setTimeout(() => refreshToken().catch(() => {}), delay)
 }
 
-/** 整页跳转到认证模块；silent 时带 prompt=none，SSO 会话有效则无登录页；prompt=select_tenant 用于切换租户 */
-export async function startLogin({ silent = true, returnTo = location.pathname + location.search, prompt = '' } = {}) {
+/** 整页跳转到认证模块；silent 时带 prompt=none，SSO 会话有效则无登录页；prompt=select_tenant 用于切换租户，tenant 直接指定目标租户 */
+export async function startLogin({ silent = true, returnTo = location.pathname + location.search, prompt = '', tenant = '' } = {}) {
   const verifier = randomString()
   const state = randomString(16)
   session.set('oidcPending', { verifier, state, returnTo })
@@ -98,6 +98,8 @@ export async function startLogin({ silent = true, returnTo = location.pathname +
     code_challenge_method: 'S256',
     state,
   })
+  if (tenant)
+    params.set('tenant', tenant)
   if (silent)
     params.set('prompt', 'none')
   else if (prompt)

@@ -60,6 +60,8 @@ class Client(models.Model):
     event_endpoint = fields.CharField(max_length=255, null=True)
     event_secret = fields.CharField(max_length=128, null=True)
     event_subscribe = fields.JSONField(default=list)
+    # 门户磁贴：icon、entry、description、order；无 entry 不在门户显示（docs/platform/auth/portal.md）
+    portal = fields.JSONField(default=dict)
     status = fields.CharField(max_length=16, default="active")
     created_at = fields.DatetimeField(auto_now_add=True)
 

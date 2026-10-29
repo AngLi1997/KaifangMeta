@@ -47,7 +47,7 @@ sequenceDiagram
   participant I as 认证模块
   U->>U: 门户点击「文书加工系统」，前端壳无该应用 Token
   U->>I: 整页跳转 /authorize?client_id=kaifang-meta-doc-process&prompt=none（带 km_sso Cookie）
-  I->>I: SSO 会话有效 + 用户可访问该应用 + tid 已开通
+  I->>I: SSO 会话有效 + can_access(sub, tid, 应用)：应用可用、tid 已开通、全员或在成员名单
   I-->>U: 302 回调 code（无登录页）
   U->>I: 换 Token（aud=kaifang-meta-doc-process，同一 sid）
 ```
@@ -168,6 +168,7 @@ sequenceDiagram
 | 会话已吊销 | 401 | `SESSION_REVOKED` | 直接登录 |
 | `aud` 不匹配 | 403 | `AUDIENCE_MISMATCH` | 走第 2 步换该应用 Token |
 | 租户未开通应用 | 403 | `TENANT_NOT_ENABLED` | 提示联系管理员 |
+| 不在应用成员名单 | 403 | `APP_ACCESS_DENIED` | 提示联系租户管理员，见 [应用接入](platform/auth/app-onboarding.md#应用访问判定) |
 | Service Token 缺 scope / 调用方不在允许列表 | 403 | `SCOPE_DENIED` / `CALLER_DENIED` | — |
 | 网关签名校验失败（模式 A） | 401 | `GATEWAY_SIGN_INVALID` | 告警：可能绕过网关 |
 | 业务权限不足 | 403 | 业务自定义 | 业务页面提示 |

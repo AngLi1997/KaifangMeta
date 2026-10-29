@@ -24,3 +24,8 @@ export function fetchUpdatePassword(data: { old_password: string, new_password: 
 export function fetchUploadAvatar(data: FormData) {
   return request.Post<Service.ResponseResult<{ avatar: string }>>('/base/avatar', data)
 }
+
+/** 门户：当前租户下可进入的应用（不要求控制台成员） */
+export function fetchPortalApps() {
+  return request.Get<Service.ResponseResult<Api.Portal.Info>>('/portal/apps')
+}

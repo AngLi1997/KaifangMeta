@@ -26,9 +26,13 @@ export function setupRouterGuard(router: Router) {
       return
     }
 
-    // 根路由重定向到首页
+    // 根路由落地统一门户；门户对所有身份账号开放，不加载控制台菜单（docs/platform/auth/portal.md）
     if (to.name === 'root') {
-      next({ path: import.meta.env.VITE_HOME_PATH, replace: true })
+      next({ name: 'portal', replace: true })
+      return
+    }
+    if (to.name === 'portal') {
+      next()
       return
     }
 
@@ -38,8 +42,8 @@ export function setupRouterGuard(router: Router) {
         await routeStore.initAuthRoute()
       }
       catch {
-        // 401 已由请求层续期 / 重新登录；其余错误（如 403 未开通）停留并提示
-        next(false)
+        // 401 已由请求层续期 / 重新登录；其余错误（如 403 未开通控制台）提示后回到门户
+        next({ name: 'portal', replace: true })
         return
       }
       // 动态路由加载完成后重新匹配当前地址，否则会落到 404

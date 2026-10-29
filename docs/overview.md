@@ -25,7 +25,7 @@
 
 | 模块 | 文档 |
 |------|------|
-| 认证 | [统一认证与身份](platform/auth/identity.md)、[应用接入](platform/auth/app-onboarding.md)、[统一权限组件](platform/auth/authz.md) |
+| 认证 | [统一认证与身份](platform/auth/identity.md)、[应用接入](platform/auth/app-onboarding.md)、[统一门户](platform/auth/portal.md)、[统一权限组件](platform/auth/authz.md) |
 | 能力 | [能力目录与下放](platform/capability/catalog.md)、[能力点](platform/capability/binding.md)、[算子](platform/capability/operator.md) |
 | AI | [知识库与 Agent 版本](platform/capability/knowledge-agent.md)、[知识库与 Agent 引擎（WeKnora）](platform/capability/weknora.md) |
 | 数据采集 | [数据采集](platform/ingest.md) |

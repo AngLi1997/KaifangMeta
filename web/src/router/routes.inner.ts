@@ -1,11 +1,20 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-/* 固定路由：OIDC 回调、错误页（登录页由认证模块提供） */
+/* 固定路由：统一门户、OIDC 回调、错误页（登录页由认证模块提供） */
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'root',
     children: [],
+  },
+  {
+    path: '/portal',
+    name: 'portal',
+    component: () => import('@/views/build-in/portal/index.vue'),
+    meta: {
+      title: '统一门户',
+      withoutTab: true,
+    },
   },
   {
     path: '/auth/callback',

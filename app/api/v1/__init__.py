@@ -7,6 +7,7 @@ from app.domains.annotation.api import router as annotation_router
 from app.domains.auditlog.api import router as auditlog_router
 from app.domains.authorization.api import apis_router, menus_router, roles_router
 from app.domains.events.api import router as events_router
+from app.domains.portal.api import router as portal_router
 from app.domains.tenants.api import router as tenants_router
 from app.domains.users.api import router as users_router
 from app.domains.users.profile import router as base_router
@@ -14,6 +15,8 @@ from app.domains.users.profile import router as base_router
 v1_router = APIRouter()
 
 v1_router.include_router(base_router, prefix="/base", tags=["基础模块"])
+# 门户对所有身份账号开放：只校验网关身份，不要求控制台成员与接口权限
+v1_router.include_router(portal_router, prefix="/portal", tags=["统一门户"])
 v1_router.include_router(users_router, prefix="/user", tags=["身份账号关联信息"], dependencies=[DependPermission])
 v1_router.include_router(roles_router, prefix="/role", dependencies=[DependPermission])
 v1_router.include_router(menus_router, prefix="/menu", dependencies=[DependPermission])

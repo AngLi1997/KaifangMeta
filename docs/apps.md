@@ -88,7 +88,7 @@ Content-Type: application/json
 | 数据 | 归属 | 存放 |
 |------|------|------|
 | 登录账号、凭据、`sub`、会话 | 平台 · 认证 | 平台 PostgreSQL `iam` schema、Redis |
-| 应用描述、密钥哈希、审计 | 平台 · 认证 | 平台 PostgreSQL `app` schema |
+| 应用描述、密钥、应用成员名单 | 平台 · 认证 | 平台 PostgreSQL `iam` schema（`client`、`client_secret`、`app_member`） |
 | 控制台权限 | 平台控制台（认证模块托管） | 平台 PostgreSQL `console_authz` schema |
 | 能力目录、能力点绑定、调用记录、计量 | 平台 · 能力 | `capability` schema |
 | 知识库定义、版本、文档映射、Agent 快照、会话审计 | 平台 · AI | `ai` schema，按租户隔离 |
