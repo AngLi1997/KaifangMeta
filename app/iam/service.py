@@ -1,8 +1,9 @@
-"""认证模块对其他模块的接口：只暴露身份账号的基础字段，不含业务组织、角色或权限"""
+"""认证模块对其他模块的接口：身份账号基础字段与机构，不含角色或权限"""
 
 import secrets
 
 from tortoise.expressions import Q
+from tortoise.functions import Count
 from tortoise.transactions import in_transaction
 
 from app.core.redis import redis
@@ -10,7 +11,7 @@ from app.settings import settings
 from app.utils.password import get_password_hash, verify_password
 
 from . import sessions
-from .models import Account, Client, Outbox, Tenant, TenantMember
+from .models import Account, Client, Org, Outbox, Tenant, TenantMember
 
 SYSTEM_TENANT = settings.IAM_SYSTEM_TENANT
 
@@ -27,6 +28,7 @@ def _public(account: Account) -> dict:
         "email": account.email,
         "name": account.name,
         "phone": account.phone,
+        "org_id": account.org_id,
         "status": account.status,
     }
 
@@ -95,8 +97,11 @@ async def list_accounts(
     username: str = "",
     tenant_id: str = "",
     status: str = "",
+    org_id: int | None = None,
 ) -> tuple[int, list[dict]]:
     query = Account.all()
+    if org_id:
+        query = query.filter(org_id=org_id)
     if username:
         query = query.filter(username__icontains=username)
     if tenant_id:
@@ -111,10 +116,13 @@ async def list_accounts(
         members.setdefault(m.sub, []).append(m.tenant_id)
     tenant_ids = {row.tenant_id for row in rows} | {t for ids in members.values() for t in ids}
     tenants = {row.id: row.name for row in await Tenant.filter(id__in=tenant_ids)} if tenant_ids else {}
+    org_ids = {row.org_id for row in rows if row.org_id}
+    orgs = dict(await Org.filter(id__in=org_ids).values_list("id", "name")) if org_ids else {}
     return total, [
         _public(row)
         | {
             "tenant_name": tenants.get(row.tenant_id, row.tenant_id),
+            "org_name": orgs.get(row.org_id),
             "member_tenants": [{"id": t, "name": tenants.get(t, t)} for t in members.get(row.sub, [])],
             "created_at": row.created_at.strftime(settings.DATETIME_FORMAT),
         }
@@ -142,13 +150,13 @@ async def tenant_names(ids: list[str]) -> list[tuple[str, str]]:
 
 
 async def accessible_apps(sub: str, tid: str) -> list[dict]:
-    """门户可进入的应用：与 /authorize 一致，应用启用且当前租户已开通；按 order、名称排序"""
-    # shortcut: 成员名单（access=members）与 testing / disabled 状态未实现，应用接入落地后在此统一判定
+    """门户可见的应用：当前租户已开通；online 可进入，disabled 灰显维护中；按 order、名称排序"""
+    # shortcut: 成员名单（access=members）与 testing 状态未实现，做成员名单时在此统一判定
     if tid not in await account_tenants(sub):
         return []
     apps = [
-        {"client_id": c.client_id, "name": c.name, "type": c.type, **c.portal}
-        for c in await Client.filter(status="active")
+        {"client_id": c.client_id, "name": c.name, "type": c.type, "status": c.status, **c.portal}
+        for c in await Client.filter(status__in=["online", "disabled"])
         if tid in c.tenants and c.portal.get("entry")
     ]
     return sorted(apps, key=lambda a: (a.get("order", 100), a["name"]))
@@ -237,13 +245,16 @@ async def create_account(
     member_tenant_ids: list[str] | None = None,
     name: str | None = None,
     phone: str | None = None,
+    org_id: int | None = None,
 ) -> dict:
     sub = new_sub()
     async with in_transaction("iam") as conn:
         tenant = await Tenant.select_for_update().using_db(conn).get_or_none(id=tenant_id)
         if not tenant or tenant.status != "active":
             raise AccountError("租户不存在或已停用")
+        await _check_account_org(conn, tenant_id, org_id)
         account = await Account.create(
+            org_id=org_id,
             using_db=conn,
             sub=sub,
             tenant_id=tenant_id,
@@ -258,7 +269,7 @@ async def create_account(
             type="user.created",
             subject=sub,
             tenant_id=tenant_id,
-            data={"sub": sub, "username": username, "email": email, "status": "active"},
+            data={"sub": sub, "username": username, "email": email, "org_id": org_id, "status": "active"},
         )
         await _set_members(conn, sub, tenant_id, member_tenant_ids or [], username, email)
     return _public(account)
@@ -274,6 +285,7 @@ async def update_account(
     member_tenant_ids: list[str] | None = None,
     name: str | None = None,
     phone: str | None = None,
+    org_id: int | None = None,
 ) -> None:
     """member_tenant_ids 为 None 时不改成员租户"""
     async with in_transaction("iam") as conn:
@@ -284,11 +296,14 @@ async def update_account(
         tenant = await Tenant.select_for_update().using_db(conn).get_or_none(id=tenant_id)
         if not tenant or (tenant.status != "active" and tenant_id != old_tenant_id):
             raise AccountError("租户不存在或已停用")
-        profile_changed = (account.tenant_id, account.username, account.email) != (tenant_id, username, email)
+        if org_id != account.org_id or tenant_id != old_tenant_id:
+            await _check_account_org(conn, tenant_id, org_id, allow_disabled=org_id == account.org_id)
+        profile = (tenant_id, username, email, org_id)
+        profile_changed = (account.tenant_id, account.username, account.email, account.org_id) != profile
         fields = []
         if profile_changed:
-            account.tenant_id, account.username, account.email = tenant_id, username, email
-            fields.extend(["tenant_id", "username", "email"])
+            account.tenant_id, account.username, account.email, account.org_id = profile
+            fields.extend(["tenant_id", "username", "email", "org_id"])
         # 姓名、电话只是账号资料，不发事件
         if (account.name, account.phone) != (name, phone):
             account.name, account.phone = name, phone
@@ -312,6 +327,7 @@ async def update_account(
                     "sub": sub,
                     "username": username,
                     "email": email,
+                    "org_id": org_id,
                     "tenant_id": tenant_id,
                     "previous_tenant_id": old_tenant_id,
                     "status": status,
@@ -366,7 +382,171 @@ async def delete_account(sub: str) -> None:
 
 async def authenticate_client(client_id: str, client_secret: str) -> Client | None:
     """机密客户端认证（client_secret 只存哈希）"""
-    client = await Client.get_or_none(client_id=client_id, status="active")
+    client = await Client.get_or_none(client_id=client_id, status="online")
     if not client or not client.client_secret_hash or not verify_password(client_secret, client.client_secret_hash):
         return None
     return client
+
+
+# ---- 机构（docs/platform/auth/identity.md「机构」）----
+
+
+async def _check_account_org(conn, tenant_id: str, org_id: int | None, allow_disabled: bool = False) -> None:
+    if org_id is None:
+        return
+    org = await Org.filter(id=org_id, tenant_id=tenant_id).using_db(conn).first()
+    if not org or (org.status != "active" and not allow_disabled):
+        raise AccountError("所属机构不存在、已停用或不属于主租户")
+
+
+def _org_public(org: Org, level: int) -> dict:
+    return {
+        "id": org.id,
+        "parent_id": org.parent_id,
+        "code": org.code,
+        "name": org.name,
+        "level": level,
+        "sort_order": org.sort_order,
+        "status": org.status,
+    }
+
+
+def _levels(orgs: list[Org]) -> dict[int, int]:
+    """按 parent_id 计算深度（根为 1）；上级缺失按根处理，环上的节点不返回"""
+    by_id = {o.id: o for o in orgs}
+    levels: dict[int, int] = {}
+    for org in orgs:
+        chain, node = [], org
+        while node and node.id not in levels and node not in chain:
+            chain.append(node)
+            node = by_id.get(node.parent_id) if node.parent_id else None
+        if node in chain:
+            continue
+        base = levels[node.id] if node else 0
+        for i, item in enumerate(reversed(chain), 1):
+            levels[item.id] = base + i
+    return levels
+
+
+async def list_orgs(tenant_id: str) -> list[dict]:
+    """租户机构平铺列表（含 level），按层级、排序、ID 排列"""
+    orgs = await Org.filter(tenant_id=tenant_id)
+    levels = _levels(orgs)
+    rows = [_org_public(o, levels[o.id]) for o in orgs if o.id in levels]
+    return sorted(rows, key=lambda r: (r["level"], r["sort_order"], r["id"]))
+
+
+async def org_tree(tenant_id: str) -> list[dict]:
+    rows = await list_orgs(tenant_id)
+    counts = dict(
+        await Account.filter(tenant_id=tenant_id, org_id__isnull=False)
+        .group_by("org_id")
+        .annotate(n=Count("sub"))
+        .values_list("org_id", "n")
+    )
+    nodes = {r["id"]: r | {"account_count": counts.get(r["id"], 0), "children": []} for r in rows}
+    roots = []
+    for node in nodes.values():
+        parent = nodes.get(node["parent_id"])
+        (parent["children"] if parent else roots).append(node)
+    return roots
+
+
+async def _check_parent(conn, tenant_id: str, org_id: int | None, parent_id: int | None) -> None:
+    if parent_id is None:
+        return
+    orgs = {o.id: o for o in await Org.filter(tenant_id=tenant_id).using_db(conn)}
+    if parent_id not in orgs:
+        raise AccountError("上级机构不存在")
+    node = orgs[parent_id]
+    while node:
+        if node.id == org_id:
+            raise AccountError("不能移到自身或下级机构下")
+        node = orgs.get(node.parent_id) if node.parent_id else None
+
+
+async def _org_event(conn, tenant_id: str, org_id: int) -> None:
+    await Outbox.create(
+        using_db=conn, type="org.changed", subject=str(org_id), tenant_id=tenant_id,
+        data={"tenant_id": tenant_id, "org_id": org_id},
+    )
+
+
+async def create_org(tenant_id: str, parent_id: int | None, code: str, name: str, sort_order: int) -> dict:
+    async with in_transaction("iam") as conn:
+        await _check_parent(conn, tenant_id, None, parent_id)
+        if await Org.filter(tenant_id=tenant_id, code=code).using_db(conn).exists():
+            raise AccountError("机构编码已存在")
+        org = await Org.create(
+            using_db=conn, tenant_id=tenant_id, parent_id=parent_id, code=code, name=name, sort_order=sort_order
+        )
+        await _org_event(conn, tenant_id, org.id)
+    return {"id": org.id}
+
+
+async def update_org(
+    tenant_id: str, org_id: int, parent_id: int | None, code: str, name: str, sort_order: int, status: str
+) -> None:
+    async with in_transaction("iam") as conn:
+        org = await Org.select_for_update().using_db(conn).get_or_none(id=org_id, tenant_id=tenant_id)
+        if not org:
+            raise AccountError("机构不存在")
+        if parent_id != org.parent_id:
+            await _check_parent(conn, tenant_id, org_id, parent_id)
+        if code != org.code and await Org.filter(tenant_id=tenant_id, code=code).using_db(conn).exists():
+            raise AccountError("机构编码已存在")
+        org.parent_id, org.code, org.name, org.sort_order, org.status = parent_id, code, name, sort_order, status
+        await org.save(using_db=conn)
+        await _org_event(conn, tenant_id, org_id)
+
+
+async def delete_org(tenant_id: str, org_id: int) -> None:
+    async with in_transaction("iam") as conn:
+        org = await Org.select_for_update().using_db(conn).get_or_none(id=org_id, tenant_id=tenant_id)
+        if not org:
+            raise AccountError("机构不存在")
+        if org.status != "disabled":
+            raise AccountError("请先停用机构")
+        if await Org.filter(parent_id=org_id).using_db(conn).exists():
+            raise AccountError("机构下仍有下级机构")
+        if await Account.filter(org_id=org_id).using_db(conn).exists():
+            raise AccountError("机构下仍有身份账号")
+        await org.delete(using_db=conn)
+        await _org_event(conn, tenant_id, org_id)
+
+
+async def import_orgs(tenant_id: str, rows: list[dict]) -> int:
+    """按 id 新增或更新（保留存量系统的机构 ID），完成后把序列调到最大 ID 之后"""
+    ids = [r["id"] for r in rows]
+    if len(set(ids)) != len(ids):
+        raise AccountError("导入数据中机构 ID 重复")
+    codes = [r["code"] for r in rows]
+    if len(set(codes)) != len(codes):
+        raise AccountError("导入数据中机构编码重复")
+    async with in_transaction("iam") as conn:
+        existing = {o.id: o for o in await Org.filter(id__in=ids).using_db(conn)}
+        if any(o.tenant_id != tenant_id for o in existing.values()):
+            raise AccountError("机构 ID 已被其他租户使用")
+        taken = await Org.filter(tenant_id=tenant_id, code__in=codes).exclude(id__in=ids).using_db(conn).exists()
+        if taken:
+            raise AccountError("机构编码与已有机构重复")
+        known = set(ids) | set(await Org.filter(tenant_id=tenant_id).using_db(conn).values_list("id", flat=True))
+        if any(r["parent_id"] is not None and r["parent_id"] not in known for r in rows):
+            raise AccountError("上级机构不存在")
+        for r in rows:
+            org = existing.get(r["id"]) or Org(id=r["id"], tenant_id=tenant_id)
+            org.parent_id, org.code, org.name = r["parent_id"], r["code"], r["name"]
+            org.sort_order, org.status = r["sort_order"], r["status"]
+            await org.save(using_db=conn, force_create=r["id"] not in existing)
+        if _levels(await Org.filter(tenant_id=tenant_id).using_db(conn)).keys() != set(
+            await Org.filter(tenant_id=tenant_id).using_db(conn).values_list("id", flat=True)
+        ):
+            raise AccountError("机构上下级存在循环")
+        await conn.execute_query(
+            "SELECT setval(pg_get_serial_sequence('iam.org', 'id'), GREATEST((SELECT max(id) FROM iam.org), 1))"
+        )
+        await Outbox.create(
+            using_db=conn, type="org.changed", subject="import", tenant_id=tenant_id,
+            data={"tenant_id": tenant_id, "org_id": None},
+        )
+    return len(rows)

@@ -9,7 +9,7 @@ function fetchConsoleMemberPage(params: Page) {
 }
 
 // ---- 身份账号（IAM 身份 + 控制台成员信息）----
-export async function fetchAccountPage(params: Page & { username?: string, tenant_id?: string, status?: string }): Promise<Service.PageResult<Entity.IdentityAccount>> {
+export async function fetchAccountPage(params: Page & { username?: string, tenant_id?: string, status?: string, org_id?: number | null }): Promise<Service.PageResult<Entity.IdentityAccount>> {
   const [accounts, members] = await Promise.all([
     request.Get<Service.PageResult<Entity.Account>>('/account/list', { params }),
     fetchConsoleMemberPage({ page: 1, page_size: 500 }),
@@ -56,6 +56,23 @@ export function fetchTenantPage(params: Page & { name?: string }) {
 export const fetchCreateTenant = (data: Pick<Entity.Tenant, 'name'>) => request.Post<Ok>('/tenant/create', data)
 export const fetchUpdateTenant = (data: Entity.Tenant) => request.Post<Ok>('/tenant/update', data)
 export const fetchDeleteTenant = (tenant_id: string) => request.Delete<Ok>('/tenant/delete', undefined, { params: { tenant_id } })
+
+// ---- 机构 ----
+type OrgForm = Pick<Entity.Org, 'parent_id' | 'code' | 'name' | 'sort_order'> & { tenant_id?: string }
+export const fetchOrgTree = (tenant_id = '') => request.Get<Service.ResponseResult<Entity.Org[]>>('/org/tree', { params: { tenant_id } })
+export const fetchCreateOrg = (data: OrgForm) => request.Post<Ok>('/org/create', data)
+export const fetchUpdateOrg = (data: OrgForm & Pick<Entity.Org, 'id' | 'status'>) => request.Post<Ok>('/org/update', data)
+export const fetchDeleteOrg = (id: number, tenant_id = '') => request.Delete<Ok>('/org/delete', undefined, { params: { id, tenant_id } })
+export const fetchImportOrgs = (data: { tenant_id?: string, orgs: Omit<Entity.Org, 'level'>[] }) => request.Post<Ok>('/org/import', data)
+
+// ---- 应用接入 ----
+type AppForm = Pick<Entity.App, 'client_id' | 'name' | 'owner' | 'tenants' | 'scopes' | 'redirect_uris' | 'post_logout_redirect_uris' | 'portal'> & { gateway: Entity.AppGateway | null }
+export const fetchAppList = (keyword = '') => request.Get<Service.ResponseResult<Entity.App[]>>('/app/list', { params: { keyword } })
+export const fetchCreateApp = (data: AppForm) => request.Post<Service.ResponseResult<{ app: Entity.App, secrets: Entity.AppSecrets }>>('/app/create', data)
+export const fetchUpdateApp = (data: AppForm) => request.Post<Service.ResponseResult<{ secrets: Entity.AppSecrets }>>('/app/update', data)
+export const fetchAppStatus = (client_id: string, status: Entity.App['status']) => request.Post<Ok>('/app/status', { client_id, status })
+export const fetchSyncApp = (client_id: string) => request.Post<Ok>('/app/sync', { client_id })
+export const fetchRotateAppSecret = (client_id: string, kind: 'client' | 'gateway') => request.Post<Service.ResponseResult<{ secrets: Entity.AppSecrets }>>('/app/secret/rotate', { client_id, kind })
 
 // ---- 角色 ----
 export function fetchRolePage(params: Page & { role_name?: string }) {

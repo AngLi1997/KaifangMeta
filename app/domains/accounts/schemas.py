@@ -11,6 +11,7 @@ class AccountCreate(BaseModel):
     phone: str | None = Field(default=None, max_length=20)
     password: str = Field(min_length=8, max_length=128)
     member_tenant_ids: list[str] = []
+    org_id: int | None = None
 
     @field_validator("tenant_id", "username", mode="before")
     @classmethod
@@ -34,6 +35,7 @@ class AccountUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=8, max_length=128)
     # 不传则不改成员租户
     member_tenant_ids: list[str] | None = None
+    org_id: int | None = None
 
     @field_validator("sub", "tenant_id", "username", mode="before")
     @classmethod

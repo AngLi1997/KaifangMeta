@@ -1,6 +1,6 @@
 """平台 API：身份目录，经网关 /kaifang-meta/platform/iam/v1/*（模式 A，scope = directory:read）
 
-只返回身份账号基础字段，不含业务组织、角色或权限（docs/platform/auth/identity.md）。
+只返回身份账号基础字段与当前租户机构，不含角色或权限（docs/platform/auth/identity.md）。
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -43,3 +43,8 @@ async def find_account(username: str, ctx: KmContext = Depends(platform_context)
     if not account or not await service.account_belongs(account["sub"], ctx.tenant):
         raise HTTPException(status_code=404, detail="账号不存在")
     return {"data": account, "audit": _audit(ctx)}
+
+
+@router.get("/orgs", summary="当前租户机构列表")
+async def list_orgs(ctx: KmContext = Depends(platform_context)):
+    return {"data": await service.list_orgs(ctx.tenant), "audit": _audit(ctx)}

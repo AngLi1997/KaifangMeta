@@ -112,10 +112,12 @@ oidc:
 
 gateway:
   prefix: /kaifang-meta/archive
-  upstream:
-    nodes: [10.20.3.11:8080, 10.20.3.12:8080]   # Docker 主机 IP:映射端口
-    health_check: { path: /actuator/health, interval: 5s }
-  rate_limit: { per_tenant_qps: 200 }
+  routes:                       # 子路径 → 上游；网关去掉 prefix 后转发，一个应用可有多套后端
+    - path: /api
+      nodes: [10.20.3.11:8080, 10.20.3.12:8080]   # Docker 主机 IP:映射端口
+      health: /api/actuator/health
+  public_paths: [/api/actuator/health]
+  rate_limit: 200               # 每租户 QPS
   callers: [kaifang-meta-doc-process]        # 允许调用本应用的其他应用
 
 platform_access:                # 本应用的服务账号可调用的平台能力
@@ -141,7 +143,7 @@ portal:                         # 门户展示，见 portal.md
 
 | 表 | 内容 |
 |----|------|
-| `iam.client` | 现有 OIDC 字段 + `status`、`auth_mode`、`access`、`owner`、`gateway`（JSON：前缀、上游、健康检查、公开路径、限流、`callers`）、`portal`（JSON） |
+| `iam.client` | 现有 OIDC 字段 + `status`、`auth_mode`、`access`、`owner`、`gateway`（JSON：前缀、子路由与上游、健康检查、公开路径、限流、`callers`）、`gateway_secret`、`sync_status` / `synced_at`、`portal`（JSON） |
 | `iam.client_secret` | `client_id × kind（client / gateway / event）× 版本`：`client` 存哈希，`gateway` / `event` 需参与 HMAC 存明文（运行时数据库账号可读，不进日志与导出）；`expires_at` 支持双密钥重叠 |
 | `iam.app_member` | `client_id × tenant_id × sub` 唯一，`granted_by`、`created_at`；只在 `access=members` 时生效 |
 
@@ -219,5 +221,7 @@ portal:                         # 门户展示，见 portal.md
 | OIDC 客户端、`iam.client`、CLI `create-client`（含门户字段）、按租户开通校验 | 已实现 |
 | 统一门户，见 [统一门户](portal.md) | 部分实现 |
 | 控制台网关路由下发（仅内置控制台与平台 API） | 已实现 |
-| 应用访问判定（成员名单、状态）、`iam.app_member`、`iam.client_secret` | 设计中 |
-| 业务应用路由下发与对账、控制台「应用接入」页面与接口、YAML、自检 | 设计中 |
+| 控制台「应用接入」页面与接口（列表、注册、编辑、上线 / 停用、重新下发、轮换密钥）、业务应用路由下发（APISIX Admin API，etcd 持久化）、漂移检测、实例健康探测，见 [统建系统接入](onboarding-unified-build.md) | 已实现（迁移 `0022`；状态 `online` / `disabled`） |
+| `gateway_secret` 存 `iam.client`，轮换无重叠期 | 已实现；`iam.client_secret` 双密钥重叠设计中 |
+| 应用访问判定中的成员名单与 `testing` / `retired` 状态、`iam.app_member` | 设计中 |
+| 定时对账、YAML 导入导出、接入自检、按租户 / 应用管理员分权 | 设计中 |

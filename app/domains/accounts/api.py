@@ -19,11 +19,12 @@ async def list_accounts(
     username: str = Query("", description="登录名"),
     tenant_id: str = Query("", description="租户"),
     status: str = Query("", description="账号状态"),
+    org_id: int | None = Query(None, description="所属机构"),
 ):
     if not is_system_tenant():
         tenant_id = CTX_TENANT_ID.get()
     total, data = await iam.list_accounts(
-        page=page, page_size=page_size, username=username, tenant_id=tenant_id, status=status
+        page=page, page_size=page_size, username=username, tenant_id=tenant_id, status=status, org_id=org_id
     )
     return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
 
@@ -41,6 +42,7 @@ async def create_account(req: AccountCreate):
             req.member_tenant_ids,
             req.name,
             req.phone,
+            req.org_id,
         )
     except iam.AccountError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -72,6 +74,7 @@ async def update_account(req: AccountUpdate):
             member_tenant_ids,
             req.name,
             req.phone,
+            req.org_id,
         )
     except iam.AccountError as e:
         raise HTTPException(status_code=400, detail=str(e))

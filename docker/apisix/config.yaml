@@ -29,6 +29,8 @@ plugins:
   - openid-connect
   - km-identity
   - proxy-rewrite
+  # 应用停用时网关直接返回 503（docs/platform/auth/app-onboarding.md「生命周期与运维」）
+  - fault-injection
   - limit-count
   - api-breaker
   - traffic-split

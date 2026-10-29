@@ -22,6 +22,17 @@
         "dev"
       ],
       "port": 3001
+    },
+    {
+      "name": "archive-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/liang/code/archive-platform/archive-platform-frontend",
+        "run",
+        "dev"
+      ],
+      "port": 5174
     }
   ]
 }

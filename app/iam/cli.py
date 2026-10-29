@@ -1,4 +1,4 @@
-"""认证模块运维命令（应用接入页面落地前的最小入口）
+"""认证模块运维命令（应用注册与控制台「应用接入」共用 app.iam.apps）
 
   python -m app.iam.cli create-client --client-id kaifang-meta-archive-room --name 智慧档案室 \\
       --scopes directory:read,delegate:user [--redirect-uris URL] [--event-endpoint URL --subscribe 'user.*'] \\
@@ -14,11 +14,8 @@ import secrets
 from tortoise import Tortoise
 
 from app.settings import settings
-from app.utils.password import get_password_hash
-
-from .api import TOKEN_EXCHANGE
 from .keys import generate_key
-from .models import Client, SigningKey
+from .models import SigningKey
 
 
 PORTAL_FIELDS = {"portal_entry": "entry", "portal_icon": "icon", "portal_description": "description"}
@@ -29,27 +26,24 @@ def _split(value: str) -> list[str]:
 
 
 async def create_client(args) -> None:
-    client_secret = secrets.token_urlsafe(32)
+    from .apps import create_app
+
     event_secret = secrets.token_hex(32) if args.event_endpoint else None
-    redirect_uris = _split(args.redirect_uris)
-    # 有回调地址即 web 应用（前端 + 后端），否则为纯后端 service 应用
-    web_grants = ["authorization_code", "refresh_token"] if redirect_uris else []
-    await Client.create(
-        client_id=args.client_id,
-        name=args.name,
-        type="web" if redirect_uris else "service",
-        redirect_uris=redirect_uris,
-        grant_types=web_grants + ["client_credentials", TOKEN_EXCHANGE],
-        client_secret_hash=get_password_hash(client_secret),
-        scopes=_split(args.scopes),
-        tenants=_split(args.tenants),
-        event_endpoint=args.event_endpoint,
-        event_secret=event_secret,
-        event_subscribe=_split(args.subscribe),
-        portal={PORTAL_FIELDS[k]: v for k, v in vars(args).items() if k in PORTAL_FIELDS and v},
+    _, once = await create_app(
+        {
+            "client_id": args.client_id,
+            "name": args.name,
+            "redirect_uris": _split(args.redirect_uris),
+            "scopes": _split(args.scopes),
+            "tenants": _split(args.tenants),
+            "event_endpoint": args.event_endpoint,
+            "event_secret": event_secret,
+            "event_subscribe": _split(args.subscribe),
+            "portal": {PORTAL_FIELDS[k]: v for k, v in vars(args).items() if k in PORTAL_FIELDS and v},
+        }
     )
     # 密钥仅显示一次（docs/platform/auth/app-onboarding.md「接入流程」）
-    print(f"client_id={args.client_id}\nclient_secret={client_secret}")
+    print(f"client_id={args.client_id}\nclient_secret={once['client_secret']}")
     if event_secret:
         print(f"event_secret={event_secret}")
 

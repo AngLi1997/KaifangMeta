@@ -47,7 +47,7 @@ async def expand_outbox() -> int:
         )
         if not rows:
             return 0
-        clients = await Client.filter(status="active").using_db(conn)
+        clients = await Client.filter(status="online").using_db(conn)
         for row in rows:
             for client in clients:
                 if _subscribed(client, row["type"], row["tenant_id"]):

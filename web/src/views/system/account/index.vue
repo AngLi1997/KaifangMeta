@@ -2,7 +2,7 @@
 import { message } from '@/utils'
 import type { DataTableColumns } from 'naive-ui'
 import { usePageTable, usePermission } from '@/hooks'
-import { fetchAccountPage, fetchDeleteAccount, fetchTenantPage } from '@/service'
+import { fetchAccountPage, fetchDeleteAccount, fetchOrgTree, fetchTenantPage } from '@/service'
 import { useAuthStore } from '@/store'
 import CopyText from '@/components/custom/CopyText.vue'
 import { COL_WIDTH, colWidth, renderTableActions } from '@/utils/table'
@@ -19,7 +19,16 @@ const { loading, rows, total, query, fetch, search, reset, changePage } = usePag
   username: '',
   tenant_id: '',
   status: '',
+  org_id: null as number | null,
 })
+const orgs = ref<Entity.Org[]>([])
+const toOrgOption = (o: Entity.Org): any => ({ key: o.id, label: o.name, children: o.children?.length ? o.children.map(toOrgOption) : undefined })
+const orgOptions = computed(() => orgs.value.map(toOrgOption))
+// 机构按租户维护：系统租户按所选租户筛选机构
+watch(() => query.value.tenant_id, async (tenantId) => {
+  query.value.org_id = null
+  orgs.value = !authStore.isSystemTenant || tenantId ? (await fetchOrgTree(tenantId)).data ?? [] : []
+}, { immediate: true })
 const tenantOptions = computed(() => tenants.value.map(tenant => ({ label: tenant.name, value: tenant.id })))
 const tenantName = (id: string) => tenants.value.find(tenant => tenant.id === id)?.name ?? id
 // 业务租户的管理员只能编辑主租户在本租户的账号
@@ -39,6 +48,7 @@ async function remove(sub: string) {
 const columns: DataTableColumns<Entity.IdentityAccount> = [
   { title: '登录名', key: 'username', minWidth: colWidth(16), ellipsis: { tooltip: true } },
   { title: '姓名', key: 'name', minWidth: colWidth(0, 6), ellipsis: { tooltip: true }, render: row => row.name || '-' },
+  { title: '机构', key: 'org_name', minWidth: colWidth(0, 8), ellipsis: { tooltip: true }, render: row => row.org_name || '-' },
   { title: '电话', key: 'phone', minWidth: colWidth(11), render: row => row.phone || '-' },
   { title: 'sub', key: 'sub', width: COL_WIDTH.id, render: row => <CopyText value={row.sub} maxLength="none" /> },
   {
@@ -119,6 +129,9 @@ const columns: DataTableColumns<Entity.IdentityAccount> = [
       </n-form-item>
       <n-form-item label="租户">
         <n-select v-model:value="query.tenant_id" clearable :options="tenantOptions" class="w-52" />
+      </n-form-item>
+      <n-form-item v-if="orgs.length" label="机构">
+        <n-tree-select v-model:value="query.org_id" :options="orgOptions" clearable filterable class="w-52" />
       </n-form-item>
       <n-form-item label="状态">
         <n-select v-model:value="query.status" :options="statusOptions" class="w-32" />

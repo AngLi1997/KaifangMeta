@@ -5,7 +5,7 @@
 | 区域 | 路由 |
 |------|------|
 | 入口 | `#login` → `#portal`、`#download`（Agent 桌面端下载主页，无外壳） |
-| 平台 · 认证 | `#users`（IAM 身份与控制台成员信息合并展示）、`#tenants`（租户信息）、`#apps`、`#releases`、`#roles` |
+| 平台 · 认证 | `#users`（IAM 身份与控制台成员信息合并展示）、`#orgs`（机构树）、`#tenants`（租户信息）、`#apps`、`#releases`、`#roles` |
 | 平台 · 能力 | `#caps` → `#op-ocr`、`#space`、`#kb` → `#kb-detail`、`#agents` → `#agent-detail`、`#models` |
 | 平台 · 数据 | `#ingest`、`#label` → `#anno-task` / `#anno-new`、`#anno-mine`、`#anno-tpl` → `#anno-layout`（布局设计器） |
 | 平台 · 标注工作台（由业务系统或「我的标注」打开，无侧栏） | 分配标注 `#label-work` → `#label-review`；自由标注 `#label-free`；布局插件演示 `#label-form` |

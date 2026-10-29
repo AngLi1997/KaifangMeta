@@ -27,6 +27,8 @@ const apps = computed(() => {
 const isConsoleMember = computed(() => info.value?.apps.some(a => a.client_id === CONSOLE_CLIENT_ID))
 
 function open(app: Api.Portal.App) {
+  if (app.status === 'disabled')
+    return
   // 控制台与门户同一前端；其他应用整页跳转，由其前端壳 prompt=none 静默登录
   if (app.client_id === CONSOLE_CLIENT_ID)
     router.push(import.meta.env.VITE_HOME_PATH)
@@ -71,13 +73,16 @@ function open(app: Api.Portal.App) {
       </div>
       <n-spin :show="loading">
         <div v-if="apps.length" class="grid">
-          <div v-for="app in apps" :key="app.client_id" class="card" @click="open(app)">
+          <div v-for="app in apps" :key="app.client_id" class="card" :class="{ disabled: app.status === 'disabled' }" @click="open(app)">
             <div class="card-icon">
               {{ app.icon || app.name.slice(0, 1) }}
             </div>
             <div class="card-title">
               {{ app.name }}
-              <icon-park-outline-arrow-right class="arrow" />
+              <n-tag v-if="app.status === 'disabled'" size="small" :bordered="false">
+                {{ $t('app.maintenance') }}
+              </n-tag>
+              <icon-park-outline-arrow-right v-else class="arrow" />
             </div>
             <div class="text-[var(--text-color-2)]">
               {{ app.description }}
@@ -141,7 +146,12 @@ function open(app: Api.Portal.App) {
     border-color 0.3s;
 }
 
-.card:hover {
+.card.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.card:not(.disabled):hover {
   transform: translateY(-6px);
   box-shadow: var(--box-shadow-3);
   border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
@@ -176,7 +186,7 @@ function open(app: Api.Portal.App) {
   transition: transform 0.2s;
 }
 
-.card:hover .arrow {
+.card:not(.disabled):hover .arrow {
   transform: translateX(4px);
   color: var(--primary-color);
 }

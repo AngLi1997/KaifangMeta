@@ -42,7 +42,7 @@ def _token_error(error: str, status_code: int = 400) -> JSONResponse:
 
 
 async def _active_client(client_id: str) -> Client | None:
-    return await Client.get_or_none(client_id=client_id, status="active")
+    return await Client.get_or_none(client_id=client_id, status="online")
 
 
 @router.get("/.well-known/openid-configuration", summary="OIDC 发现")

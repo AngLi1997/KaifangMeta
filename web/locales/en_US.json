@@ -69,6 +69,7 @@
     "welcomeBack": "Welcome back, {name}",
     "searchApp": "Search apps",
     "noApps": "No accessible apps in this tenant. Contact your tenant admin.",
+    "maintenance": "Maintenance",
     "noMatchApps": "No matching apps"
   },
   "login": {

@@ -20,6 +20,8 @@ class Account(models.Model):
     email = fields.CharField(max_length=255, null=True)
     name = fields.CharField(max_length=64, null=True)
     phone = fields.CharField(max_length=20, null=True)
+    # 所属机构，须属于主租户（docs/platform/auth/identity.md「机构」）
+    org_id = fields.BigIntField(null=True, index=True)
     password_hash = fields.CharField(max_length=255)
     status = fields.CharField(max_length=16, default="active", index=True)
     created_at = fields.DatetimeField(auto_now_add=True)
@@ -27,6 +29,24 @@ class Account(models.Model):
 
     class Meta:
         table = "account"
+
+
+class Org(models.Model):
+    """机构：按租户维护的机构树，层级按 parent_id 计算；id 可在导入时指定以保留存量系统的机构 ID"""
+
+    id = fields.BigIntField(pk=True)
+    tenant_id = fields.CharField(max_length=32, index=True)
+    parent_id = fields.BigIntField(null=True, index=True)
+    code = fields.CharField(max_length=64)
+    name = fields.CharField(max_length=128)
+    sort_order = fields.IntField(default=0)
+    status = fields.CharField(max_length=16, default="active")
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+    class Meta:
+        table = "org"
+        unique_together = (("tenant_id", "code"),)
 
 
 class TenantMember(models.Model):
@@ -62,7 +82,16 @@ class Client(models.Model):
     event_subscribe = fields.JSONField(default=list)
     # 门户磁贴：icon、entry、description、order；无 entry 不在门户显示（docs/platform/auth/portal.md）
     portal = fields.JSONField(default=dict)
-    status = fields.CharField(max_length=16, default="active")
+    # 网关：prefix、routes[{path, nodes, health}]、public_paths、rate_limit；平台经 APISIX Admin API 下发
+    gateway = fields.JSONField(default=dict)
+    # 网关签名身份头的 HMAC 密钥（明文，网关与业务后端共用），不进日志、列表与导出
+    gateway_secret = fields.CharField(max_length=128, null=True)
+    owner = fields.CharField(max_length=64, null=True)
+    # online：已上线；disabled：已停用（网关返回 503，授权页拒绝）
+    status = fields.CharField(max_length=16, default="online")
+    # 网关下发状态：synced / pending；未配置网关路由时为空
+    sync_status = fields.CharField(max_length=16, null=True)
+    synced_at = fields.DatetimeField(null=True)
     created_at = fields.DatetimeField(auto_now_add=True)
 
     class Meta:

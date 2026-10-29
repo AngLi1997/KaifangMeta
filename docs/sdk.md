@@ -33,7 +33,7 @@ Python SDK 与 Java Starter 提供相同的核心协议能力，并遵循应用�
 | 配置 | 校验 `issuer`、`client_id`、认证模式和密钥；生产环境拒绝空值与默认密钥。应用密钥不写日志、不回传浏览器。 |
 | Service Token | 后端以 client credentials 换取 Token，按应用、租户和 scope 缓存并在到期前续期；调用方只能申请应用获批的 scope。 |
 | HTTP 客户端 | 基于 OpenAPI 提供类型化客户端；统一处理错误响应、超时、`X-KM-Request-Id` 与 `traceparent`。写请求由业务传入稳定的 `Idempotency-Key`；仅对幂等请求重试，尊重 `Retry-After`，默认最多重试两次。 |
-| 身份目录 | `KmDirectory` 按 `sub` 查询账号基础资料及状态；不提供业务组织、业务角色或数据权限。 |
+| 身份目录 | `KmDirectory` 按 `sub` / 登录名查询账号基础资料、状态与所属机构，查询当前租户机构列表；不提供业务角色或数据权限。 |
 | 审计上下文 | 为业务自己的审计记录提供 `sub`、调用方、租户、代表用户和 request ID；Java 提供可选审计注解 / 切面；不把全部业务操作日志写入 Meta 审计库。 |
 
 Java 配置示例：
@@ -85,8 +85,15 @@ kaifang-meta:
 
 `@kaifang-meta/sdk` 提供平台页面嵌入辅助：`openAnnotation(taskId, { mode: 'tab' | 'iframe', view })`，处理 iframe 高度和 `postMessage`。父页面只把消息用于界面刷新，业务状态以事件和查询 API 为准；iframe 必须使用登记的 `annotation.embed_origins`。
 
+## 实现状态
+
+| 包 | 状态 |
+|----|------|
+| Java `kaifang-meta-spring-boot-starter` 0.1.0-SNAPSHOT | 部分实现：`KmIdentityFilter`（网关签名身份头，按应用网关前缀补回外部路径验签）、`KmContext`、`KmPrincipalResolver`、`KmDirectory`（账号、机构，Service Token 按租户缓存）；`mvn install` 到本机，未发布私服。事件、RBAC、能力与标注客户端设计中 |
+| Python、TypeScript 包 | 设计中；统建前端暂以 `km-auth.js`（取自控制台 OIDC 实现）接入 |
+
 ## 业务边界
 
-业务系统继续拥有本地用户资料、组织、角色、菜单、数据范围、领域状态机和审计记录。SDK 不实现业务流程、不替业务持有数据库连接、不替业务生成文件归属规则，也不把大文件代理经过平台服务。业务文件默认留在业务对象存储，通过短期预签名 URL 直传或直读。
+业务系统继续拥有本地用户资料副本、角色、菜单、数据范围、领域状态机和审计记录；身份账号与机构以平台为准。SDK 不实现业务流程、不替业务持有数据库连接、不替业务生成文件归属规则，也不把大文件代理经过平台服务。业务文件默认留在业务对象存储，通过短期预签名 URL 直传或直读。
 
 接入流程与配置字段见[应用接入](platform/auth/app-onboarding.md)。`desktop` 类型应用的发布、渠道、灰度和下载页见 [Agent 桌面端](harness.md)。

@@ -26,8 +26,9 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [对象存储路径](docs/storage.md) | 平台文件存在 MinIO 哪里、新业务如何登记目录 | 单桶、业务目录规则、目录登记表、保留期、访问规则 | 设计中 |
 | [多节点部署](docs/deployment.md) | 如何多机部署与发布 | Docker Compose、无状态、共享状态、缓存失效、高可用、降级 | 部分实现 |
 | **平台 · 认证** | | | |
-| [统一认证与身份](docs/platform/auth/identity.md) | 平台管账号与租户，业务管用户 | 身份账号维护、租户管理、`sub` 关联、轻租户 | 已实现 |
+| [统一认证与身份](docs/platform/auth/identity.md) | 平台管账号、机构与租户，业务管本地用户与角色 | 身份账号维护、机构管理、租户管理、`sub` 关联、轻租户 | 部分实现 |
 | [应用接入](docs/platform/auth/app-onboarding.md) | 新应用如何接入认证、平台如何管理应用 | 前端壳与 SDK 接入、本地用户关联、应用访问判定（租户开通 + 成员名单）、应用描述、应用管理页面与接口、生命周期 | 部分实现 |
+| [统建系统接入](docs/platform/auth/onboarding-unified-build.md) | 存量业务系统统建如何接入平台登录与门户 | 现状对照、机构管理、应用接入首版（数据表格、APISIX / etcd 下发与状态）、Java starter 首版、统建前后端改造、验收与待确认 | 部分实现 |
 | [统一门户](docs/platform/auth/portal.md) | 用户登录后从哪里进入各应用 | 门户页面、可见应用判定、登录落地、租户切换、接口 | 部分实现 |
 | [统一权限组件](docs/platform/auth/authz.md) | 菜单 / 按钮 / 数据权限怎么做 | 一套组件多份数据、数据模型、控制台内置角色、防越权 | 部分实现 |
 | **平台 · 能力 / AI** | | | |
@@ -48,7 +49,7 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [定时任务与异步处理](docs/platform/scheduler.md) | 长任务、定时任务如何执行 | PG 任务表、Worker、队列并发、重试超时幂等 | 部分实现 |
 | **客户端与分发** | | | |
 | [Agent 桌面端](docs/harness.md) | `kaifang-harness` 如何使用平台 | 认证、模型、知识库 MCP、版本发布、下载主页 | 设计中 |
-| [SDK / Starter](docs/sdk.md) | 业务系统用什么包接入 | 包名、分发渠道、协议与功能 | 设计中 |
+| [SDK / Starter](docs/sdk.md) | 业务系统用什么包接入 | 包名、分发渠道、协议与功能 | 部分实现 |
 | **图与原型** | | | |
 | [架构图](docs/design/architecture.html) | 一张图看全局 | 接入端、网关、平台模块、业务系统、基础设施 | — |
 | [高保真原型](docs/design/prototype.html) | 界面与交互示意 | 平台控制台 + 智慧档案室，示例数据 | — |
@@ -68,7 +69,7 @@ open docs/design/prototype.html#ar-import
 |------|------|------|
 | 认证模块 | `app/iam`（`iam` schema） | 身份账号、全局唯一 `sub`、SSO；OIDC 授权码 + PKCE、Refresh Token 轮换、client credentials（Service Token）、Token Exchange；RS256 + JWKS，密钥可轮换；启动时经 Admin API 下发平台路由 |
 | 身份目录 API | `/kaifang-meta/platform/iam/v1/*` | 平台 API（模式 A，scope `directory:read`），支持 `X-KM-On-Behalf-Of` 代表用户 |
-| 平台控制台 | `app/`（`console_authz` schema）+ `web/` | 内置应用 `kaifang-meta-console`，只信任网关签名身份头；提供租户和 IAM 身份账号管理，新建身份账号不自动开通控制台成员；租户 / 应用 / 资源授权见 [统一权限组件](docs/platform/auth/authz.md)，业务组织由各业务系统维护 |
+| 平台控制台 | `app/`（`console_authz` schema）+ `web/` | 内置应用 `kaifang-meta-console`，只信任网关签名身份头；提供租户和 IAM 身份账号管理，新建身份账号不自动开通控制台成员；租户 / 应用 / 资源授权见 [统一权限组件](docs/platform/auth/authz.md)，机构树由认证模块维护 |
 | 事件分发 | `python -m app.worker` | `kaifang-meta-platform-worker`：outbox → 按订阅投递，HMAC 签名，失败退避重试与死信；控制台订阅 `user.*` |
 | 网关插件 | `docker/apisix/plugins` | `km-identity`：清洗 `X-KM-*`、`aud`、吊销、租户开通、scope / 调用方、代表用户、签名身份头；登录接口与控制台按 应用 × 租户 限流 |
 
@@ -76,7 +77,7 @@ open docs/design/prototype.html#ar-import
 |----|------|
 | 配置 | 只用根目录 `.env`（模板 `.env.example`），后端、前端、`docker/docker-compose.yml`、启动脚本共用 |
 | 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
-| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口），`0020` 增加应用门户字段 |
+| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口），`0020` 增加应用门户字段，`0021` 增加机构管理（`iam.org`、账号所属机构），`0022` 增加应用接入（网关配置与下发状态，应用状态 `online` / `disabled`） |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
 | 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181）、etcd Workbench（HTTPS 9011） |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |

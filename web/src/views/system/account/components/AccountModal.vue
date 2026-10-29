@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { message } from '@/utils'
 import type { FormInst, FormRules } from 'naive-ui'
-import { fetchCreateAccount, fetchTenantPage, fetchUpdateAccount } from '@/service'
+import { fetchCreateAccount, fetchOrgTree, fetchTenantPage, fetchUpdateAccount } from '@/service'
 import { useAuthStore } from '@/store'
 
 type Form = Entity.AccountForm & { sub?: string, is_console_admin?: boolean }
@@ -11,7 +11,27 @@ const visible = ref(false)
 const loading = ref(false)
 const formRef = ref<FormInst | null>(null)
 const tenants = ref<Entity.Tenant[]>([])
-const form = ref<Form>({ tenant_id: '', username: '', email: null, name: null, phone: null, password: '', status: 'active', member_tenant_ids: [] })
+const form = ref<Form>({ tenant_id: '', username: '', email: null, name: null, phone: null, password: '', status: 'active', member_tenant_ids: [], org_id: null })
+const orgs = ref<Entity.Org[]>([])
+// 只能选主租户内启用的机构；当前机构已停用时仍保留显示
+const orgOptions = computed(() => {
+  const toOption = (o: Entity.Org): any => ({
+    key: o.id,
+    label: o.name,
+    disabled: o.status === 'disabled' && o.id !== form.value.org_id,
+    children: o.children?.length ? o.children.map(toOption) : undefined,
+  })
+  return orgs.value.map(toOption)
+})
+async function loadOrgs(tenantId: string) {
+  orgs.value = tenantId ? (await fetchOrgTree(authStore.isSystemTenant ? tenantId : '')).data ?? [] : []
+}
+watch(() => form.value.tenant_id, async (tenantId, old) => {
+  if (!visible.value || tenantId === old)
+    return
+  form.value.org_id = null
+  await loadOrgs(tenantId)
+})
 const originalStatus = ref<Entity.Account['status']>('active')
 const tenantOptions = computed(() => tenants.value.map(tenant => ({
   label: `${tenant.name} · ${tenant.id}${tenant.status === 'disabled' ? '（停用）' : ''}`,
@@ -53,6 +73,7 @@ async function open(row?: Entity.IdentityAccount) {
         password: '',
         status: row.status,
         member_tenant_ids: row.member_tenants?.map(tenant => tenant.id) ?? [],
+        org_id: row.org_id,
       }
     : {
         tenant_id: tenants.value.find(tenant => tenant.status === 'active')?.id ?? '',
@@ -63,20 +84,23 @@ async function open(row?: Entity.IdentityAccount) {
         password: '',
         status: 'active',
         member_tenant_ids: [],
+        org_id: null,
       }
+  await loadOrgs(form.value.tenant_id)
   visible.value = true
 }
 
 async function submit() {
   await formRef.value?.validate()
   loading.value = true
-  const { sub, tenant_id, username, email, name, phone, password, status, member_tenant_ids } = form.value
+  const { sub, tenant_id, username, email, name, phone, password, status, member_tenant_ids, org_id } = form.value
   const identity = {
     tenant_id,
     username,
     email: email || null,
     name: name || null,
     phone: phone || null,
+    org_id,
     ...(authStore.isSystemTenant ? { member_tenant_ids: member_tenant_ids?.filter(id => id !== tenant_id) } : {}),
   }
   const res = sub
@@ -119,6 +143,9 @@ defineExpose({ open })
       </n-form-item>
       <n-form-item label="租户" path="tenant_id">
         <n-select v-model:value="form.tenant_id" :options="tenantOptions" :disabled="form.is_console_admin || !authStore.isSystemTenant" />
+      </n-form-item>
+      <n-form-item label="所属机构" path="org_id">
+        <n-tree-select v-model:value="form.org_id" :options="orgOptions" clearable filterable />
       </n-form-item>
       <n-form-item v-if="authStore.isSystemTenant && !form.is_console_admin" label="其他租户">
         <n-select v-model:value="form.member_tenant_ids" multiple clearable :options="memberOptions" />

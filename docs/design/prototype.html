@@ -297,7 +297,7 @@ function capFilter(a, k, v) {
   document.querySelectorAll('.cap[data-type]').forEach(c => { c.style.display = (!capF.type || c.dataset.type === capF.type) && (!capF.vis || c.dataset.vis === capF.vis) ? '' : 'none'; });
 }
 const PLATFORM_NAV = [
-  ['认证', [['users', '身份账号'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
+  ['认证', [['users', '身份账号'], ['orgs', '机构管理'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
   ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型']]],
   ['数据', [['ingest', '数据采集'], ['label', '标注工单'], ['anno-mine', '我的标注', '3'], ['anno-tpl', '场景模板']]],
   ['运维', [['jobs', '任务调度'], ['settings', '平台设置'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['ETCD', 'http://localhost:9010']]]]],
@@ -363,6 +363,15 @@ const pages = {
         ['<span class="m">u_5d07e3a9c1b2f468</span>', '<span class="m">temp-scanner</span>', S('市档案馆'), 'scan@example.cn', D('停用', 'err'), '未开通', '未开通', '—', '<a class="btn ghost">编辑</a> <a class="btn ghost">删除</a>'],
       ]), true),
 
+  orgs: () => ph('机构管理', '', '<button class="btn">导入</button><button class="btn pri">新增机构</button>') +
+    card('机构', T(['名称', '编码', '排序', '账号数', '状态', ''], [
+      ['<b>示例省市场监管局</b>', '<span class="m">37</span>', '0', '4', D('启用', 'ok'), '<a class="btn ghost">新增下级</a> <a class="btn ghost">编辑</a>'],
+      ['<span style="padding-left:20px">示例市市场监管局</span>', '<span class="m">3701</span>', '10', '12', D('启用', 'ok'), '<a class="btn ghost">新增下级</a> <a class="btn ghost">编辑</a>'],
+      ['<span style="padding-left:40px">示例区市场监管局</span>', '<span class="m">370102</span>', '10', '8', D('启用', 'ok'), '<a class="btn ghost">新增下级</a> <a class="btn ghost">编辑</a>'],
+      ['<span style="padding-left:40px">示例县市场监管局</span>', '<span class="m">370124</span>', '20', '0', D('停用', 'err'), '<a class="btn ghost">新增下级</a> <a class="btn ghost">编辑</a> <a class="btn ghost">删除</a>'],
+      ['<span style="padding-left:20px">示例二市市场监管局</span>', '<span class="m">3702</span>', '20', '6', D('启用', 'ok'), '<a class="btn ghost">新增下级</a> <a class="btn ghost">编辑</a>'],
+    ]), true),
+
   tenants: () => ph('租户管理', '', '<button class="btn pri">新建租户</button>') +
     card('租户', T(['租户名称', '租户 ID', '状态', '创建时间', ''], [
       ['<b>系统租户</b>', '<span class="m">t_system</span>', D('启用', 'ok'), '<span class="m mu">10-27 09:00</span>', '<a class="btn ghost">编辑</a>'],
@@ -372,11 +381,11 @@ const pages = {
     ]), true),
 
   apps: () => ph('应用接入', '', '<button class="btn">导入 YAML</button><button class="btn pri">注册应用</button>') +
-    card('已接入应用', T(['应用', 'client_id', '鉴权模式', '开通租户', '访问范围', '网关前缀', '实例', '状态', ''], [
-      ['<b>智慧档案室</b>', '<span class="m">kaifang-meta-archive-room</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/archive</span>', '<span class="m">2 / 2</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
-      ['文书加工系统', '<span class="m">kaifang-meta-doc-process</span>', S('透传自验'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/doc</span>', '<span class="m">3 / 3</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
-      ['统建系统', '<span class="m">kaifang-meta-unified-build</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span> <span class="m mu">+2</span>', S('成员名单 · 36', 'ac'), '<span class="m">/kaifang-meta/ub</span>', '<span class="m">1 / 2</span>', D('1 实例异常', 'warn'), '<a class="btn ghost">配置</a>'],
-      ['库房管理', '<span class="m">kaifang-meta-warehouse</span>', S('业务自管 · 2025-06 前迁移', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/wh</span>', '<span class="m">2 / 2</span>', D('联调中', ''), '<a class="btn ghost">配置</a>'],
+    card('已接入应用', T(['应用', 'client_id', '鉴权模式', '开通租户', '访问范围', '网关前缀', '网关', '实例', '状态', ''], [
+      ['<b>智慧档案室</b>', '<span class="m">kaifang-meta-archive-room</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/archive</span>', S('已下发', 'ok'), '<span class="m">2 / 2</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['文书加工系统', '<span class="m">kaifang-meta-doc-process</span>', S('透传自验'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/doc</span>', S('已下发', 'ok'), '<span class="m">3 / 3</span>', D('已上线', 'ok'), '<a class="btn ghost">配置</a>'],
+      ['统建系统', '<span class="m">kaifang-meta-unified-build</span>', S('网关托管', 'ac'), '<span class="m">t_5e2a9c1d7b3f4086</span> <span class="m mu">+2</span>', S('成员名单 · 36', 'ac'), '<span class="m">/kaifang-meta/ub</span>', S('配置漂移', 'err'), '<span class="m">1 / 2</span>', D('1 实例异常', 'warn'), '<a class="btn ghost">配置</a>'],
+      ['库房管理', '<span class="m">kaifang-meta-warehouse</span>', S('业务自管 · 2025-06 前迁移', 'warn'), '<span class="m">t_5e2a9c1d7b3f4086</span>', '全员', '<span class="m">/kaifang-meta/wh</span>', S('待下发', 'warn'), '<span class="m">2 / 2</span>', D('联调中', ''), '<a class="btn ghost">配置</a>'],
     ]), true) +
     `<div class="grid" style="grid-template-columns:repeat(3,1fr)">
       ${card('智慧档案室 · 接入配置<button class="btn sm">轮换密钥</button>', `<dl class="kv">
@@ -1271,7 +1280,7 @@ function ldMode(m) {
 }
 
 const CRUMB = {
-  users: '认证 / <b>身份账号</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
+  users: '认证 / <b>身份账号</b>', orgs: '认证 / <b>机构管理</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
   kb: '能力 / <b>知识库</b>', 'kb-detail': '能力 / 知识库 / <b>档案业务规范库</b>', agents: '能力 / <b>Agent</b>', 'agent-detail': '能力 / Agent / <b>档案问答助手</b>',
   models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', 'anno-layout': '数据 / 场景模板 / <b>企业登记著录 · 布局</b>', 'label-form': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>企业登记档案著录</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
   'ar-home': '<b>工作台</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',

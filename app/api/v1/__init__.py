@@ -3,10 +3,12 @@ from fastapi import APIRouter
 from app.core.dependency import DependPermission
 
 from app.domains.accounts.api import router as accounts_router
+from app.domains.apps.api import router as apps_router
 from app.domains.annotation.api import router as annotation_router
 from app.domains.auditlog.api import router as auditlog_router
 from app.domains.authorization.api import apis_router, menus_router, roles_router
 from app.domains.events.api import router as events_router
+from app.domains.orgs.api import router as orgs_router
 from app.domains.portal.api import router as portal_router
 from app.domains.tenants.api import router as tenants_router
 from app.domains.users.api import router as users_router
@@ -23,6 +25,8 @@ v1_router.include_router(menus_router, prefix="/menu", dependencies=[DependPermi
 v1_router.include_router(apis_router, prefix="/api", dependencies=[DependPermission])
 v1_router.include_router(auditlog_router, prefix="/auditlog", tags=["审计日志模块"], dependencies=[DependPermission])
 v1_router.include_router(accounts_router, prefix="/account", tags=["身份账号"], dependencies=[DependPermission])
+v1_router.include_router(orgs_router, prefix="/org", tags=["机构"], dependencies=[DependPermission])
+v1_router.include_router(apps_router, prefix="/app", tags=["应用接入"], dependencies=[DependPermission])
 v1_router.include_router(tenants_router, prefix="/tenant", tags=["租户"], dependencies=[DependPermission])
 v1_router.include_router(annotation_router, prefix="/annotation", tags=["数据标注"], dependencies=[DependPermission])
 # 平台事件回调：不经网关，自行校验事件签名

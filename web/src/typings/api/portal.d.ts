@@ -6,6 +6,7 @@ namespace Api {
       client_id: string
       name: string
       type: string
+      status: 'online' | 'disabled'
       entry: string
       icon?: string
       description?: string

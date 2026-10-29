@@ -63,4 +63,5 @@ GET /kaifang-meta/console/api/v1/portal/apps
 | 原型 `#portal` | 已绘制 |
 | `/portal` 页面、`GET /portal/apps`、登录默认落地、非成员重定向、门户内直接切换租户（`/authorize?tenant=`） | 已实现 |
 | `iam.client.portal`（迁移 `0020`）；业务应用经 CLI `create-client --portal-entry --portal-icon --portal-description` 登记 | 已实现 |
-| 可见判定中的成员名单、`testing` / `disabled` 状态 | 设计中，当前只判定应用启用且当前租户已开通 |
+| `disabled` 应用灰显「维护中」且不可点 | 已实现 |
+| 可见判定中的成员名单、`testing` 状态 | 设计中 |
