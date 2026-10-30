@@ -36,9 +36,10 @@
 
 - 存于 `iam.org`：`id`（bigint）、`tenant_id`、`parent_id`、`code`（租户内唯一）、`name`、`sort_order`、`status`；层级按 `parent_id` 计算。身份账号 `iam.account.org_id` 指向主租户内的一个机构，可空。
 - 控制台「机构管理」维护机构树：新增、编辑、改上级（不能移到自身或后代下）、启停、删除（仅已停用、无下级、无账号）、JSON 导入（保留 `id`，用于从存量系统迁入，已有业务数据中的机构 ID 与编码继续有效）。租户管理员只维护本租户机构。
+- 首次底座机构快照由 Alembic `0023` 导入 `t_system`：排除默认演示机构，并把 22 组同名、同编码的父子节点合并为父节点，子节点 ID 到保留 ID 的映射见 [`0023_organization_seed.json`](../../../alembic/versions/0023_organization_seed.json)。业务系统引用被合并 ID 时须先按该映射转换；其他机构 ID 与编码保留。
 - 停用机构不影响账号登录，只在选择器中隐藏。
 - 身份目录 `GET /kaifang-meta/platform/iam/v1/orgs` 返回当前租户机构平铺列表（含 `level`）；业务按 `id` 或 `code` 引用机构，数据范围、业务角色仍由业务解释。
-- 首个接入方案见 [统建系统接入](onboarding-unified-build.md)。迁移 `0021` 落地 `iam.org`、`iam.account.org_id`、「机构管理」菜单与接口；`org.changed` 已写入 outbox，业务订阅后续接入。
+- 首个接入方案见 [统建系统接入](onboarding-unified-build.md)。迁移 `0021` 落地 `iam.org`、`iam.account.org_id`、「机构管理」菜单与接口；`0023` 导入并规范化底座机构快照；机构变更写入 outbox，业务订阅后续接入。
 
 ## 当前运行策略
 

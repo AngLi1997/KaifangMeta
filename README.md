@@ -77,7 +77,7 @@ open docs/design/prototype.html#ar-import
 |----|------|
 | 配置 | 只用根目录 `.env`（模板 `.env.example`），后端、前端、`docker/docker-compose.yml`、启动脚本共用 |
 | 数据库 | PostgreSQL + pgvector，库 `kaifang-meta-platform`；`iam`、`console_authz`、`annotation` 三个 schema，仅按 `sub` 关联 |
-| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口），`0020` 增加应用门户字段，`0021` 增加机构管理（`iam.org`、账号所属机构），`0022` 增加应用接入（网关配置与下发状态，应用状态 `online` / `disabled`） |
+| 迁移 | alembic（`alembic/versions`，版本表在 `public`）：控制台、身份、seed、应用接入、事件、菜单和审计迁移；`0010` 清理历史控制台成员，`0011` 合并身份账号入口，`0012` 增加租户管理，`0016` / `0017` 增加数据标注（`annotation` schema、菜单与接口），`0020` 增加应用门户字段，`0021` 增加机构管理（`iam.org`、账号所属机构），`0022` 增加应用接入（网关配置与下发状态，应用状态 `online` / `disabled`），`0023` 清理机构演示数据并导入底座快照（合并重复编码节点） |
 | 会话 | SSO 会话、授权码、Refresh Token、吊销键均存 Redis |
 | 基础设施 | `docker/docker-compose.yml`：PostgreSQL 5432、Redis 6379、MinIO 9000 / 9001（HTTPS Console 9444）、etcd 2379、APISIX 9080 / 9180（HTTPS Dashboard 9181）、etcd Workbench（HTTPS 9011） |
 | 镜像构建 | `docker/requirements.txt` 由 `pyproject.toml` / `uv.lock` 导出；从仓库根目录执行 `docker build -f docker/Dockerfile -t kaifang-meta-platform:local .` |
