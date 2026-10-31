@@ -1,13 +1,14 @@
-# 知识库与 Agent 引擎（WeKnora）
+# 知识库引擎与 WeKnora 接入
 
-> 平台 · AI 模块的提供方，独立进程 `kaifang-meta-weknora` + `kaifang-meta-docreader`。相关：[知识库与 Agent 版本](knowledge-agent.md)、[能力目录](catalog.md)、[数据标注](../annotation/overview.md)、[对象存储路径](../../storage.md)、[Agent 桌面端](../../harness.md)。
+> 平台 · AI 模块的知识库提供方，独立进程 `kaifang-meta-weknora` + `kaifang-meta-docreader`。首版服务端 Agent Runtime 使用 DeepSeek Harness；WeKnora Agent 为后续可选适配器。相关：[AI 模块：Agent 管理与运行](../ai/overview.md)、[知识库与 Agent 版本](knowledge-agent.md)、[能力目录](catalog.md)、[数据标注](../annotation/overview.md)、[对象存储路径](../../storage.md)、[Agent 桌面端](../../harness.md)。
 
 ## 要点
 
-- **WeKnora 是引擎，不是入口**：知识库解析、切片、检索、ReAct Agent 由开源 WeKnora（腾讯，MIT）承担；目录、授权、ACL 过滤、版本、计量、审计仍在 AI 模块。业务系统、浏览器、桌面端只调用 `/kaifang-meta/platform/ai/v1/*`（桌面端只用其中的知识库 MCP），WeKnora 不经网关对外暴露。
+- **WeKnora 首先是知识库引擎，不是入口**：知识库解析、切片、索引和检索由开源 WeKnora（腾讯，MIT）承担；目录、授权、ACL 过滤、版本、计量、审计和 Agent API 仍在 AI 模块。业务浏览器经业务后端代理，平台控制台和桌面端调用平台 API；WeKnora 不经网关对外暴露。
+- **首版 Agent 不由 WeKnora 运行**：平台 AI 模块经 `AgentRuntimeProvider` 调用 DeepSeek Harness；WeKnora 自身 Agent 能力在完成适配和能力校验后再作为另一种 Provider 上线。
 - **不新增基础设施**：WeKnora 复用平台 PostgreSQL（独立数据库 + pgvector）、Redis（独立 DB 号）、MinIO（`ai` 业务目录）；Neo4j、Elasticsearch、Milvus、Langfuse 等可选组件一律不启用。
 - **模型统一走模型网关**：WeKnora 内配置的对话、向量、重排模型都指向平台模型网关（OpenAI 兼容），计量、配额、按密级路由本地模型不被绕过。
-- **界面自建，不嵌入 WeKnora 网页**：控制台知识库 / Agent 管理页、业务内嵌问答面板、平台托管的网页版 Agent 均为 nova-admin 风格自建页面，调用 AI 模块的 SSE 接口；WeKnora 自带 Web UI 只在运维内网用于调试解析与检索效果。
+- **界面自建，不嵌入 WeKnora 网页**：控制台资源管理页与业务 Agent 浮动窗口由平台 / `kaifang-meta-shell` 提供，调用 AI 模块的标准 SSE 接口；WeKnora 自带 Web UI 只在运维内网用于调试解析与检索效果。
 - **海量档案不让 WeKnora 重复 OCR**：原件留在智慧档案室对象存储；平台流水线解析出的全文（按页 Markdown）+ ACL 元数据以文本方式写入 WeKnora，只有制度规范等小批量文件才直接上传让 docreader 解析。
 - **权限靠分区 + 后置校验**：WeKnora 不理解业务权限，强制过滤字段（全宗、密级）映射为 WeKnora 知识库分区，检索与 Agent 会话只放行有权分区，返回结果再按元数据二次校验。
 - **Label Studio 只做标注画布**：沿用 [数据标注](../annotation/overview.md) 的嵌入编辑器方案；标注回写确认后的档案才进入全文知识库，问答评测集也用标注工单产出。
@@ -15,7 +16,7 @@
 ## 定位与部署
 
 ```
-业务后端 / 网页版 Agent / 桌面端
+业务后端 / Agent 浮动窗口 / 桌面端
         │  /kaifang-meta/platform/ai/v1/*（网关，Service Token 或用户 Token）
         ▼
 平台 · AI 模块（ai schema：知识库定义、版本、分区映射、文档映射、Agent 快照、会话审计）
@@ -48,10 +49,10 @@ kaifang-meta-weknora × N ──gRPC──▶ kaifang-meta-docreader × N
 | 知识库版本 `v3` | 一组 WeKnora 知识库（每分区一个） | 命名 `{space}.{kb}@v3/{分区值}`，如 `space.archive-room.archive-fulltext@v3/J001-内部` |
 | `prod` 别名 | — | 指向某个版本；回滚 = 切别名，WeKnora 侧不动 |
 | 知识库文档 `external_id` | knowledge（`knowledge_id`） | 映射表 `kb_document(kb_version, partition, external_id, knowledge_id, content_hash, status)` |
-| Agent 版本快照 | 自定义 Agent | 发布时按快照生成 WeKnora Agent 配置（提示词、模型、知识库 ID、MCP 工具），快照不可变 |
-| 会话 | session | AI 模块保存 `sub`、应用、过滤条件、引用来源，用于审计；WeKnora 会话只作运行态 |
+| Agent 版本快照 | Agent Runtime Provider | 首版编译为 DeepSeek Harness 运行计划；未来可编译为 WeKnora Agent 配置，快照不可变 |
+| 会话 | AI 模块会话与运行事件 | AI 模块保存 `sub`、应用、业务过滤条件、运行时版本和引用来源；WeKnora 的 session 仅供其 Agent Provider 内部使用 |
 | 知识库 MCP `/ai/v1/mcp` | 知识库 MCP 服务（Streamable HTTP） | AI 模块代理，只透传已授权知识库的检索工具；供桌面端 RAG skill 等外部 MCP 客户端使用 |
-| Agent 工具 `tool.archive-search` | MCP 服务 | 业务 OpenAPI 由平台以 MCP 暴露，WeKnora 作为 MCP 客户端调用，调用经平台代表用户 |
+| Agent 工具 `tool.archive-search` | MCP 工具 Schema + 业务后端执行器 | AI 模块把工具委派给发起会话的业务后端；业务后端按代表用户权限执行并回传结果，平台不主动调用业务 API |
 
 两类知识库的版本语义不同，见 [知识库与 Agent 版本](knowledge-agent.md)：
 
@@ -118,22 +119,22 @@ sequenceDiagram
 
 WeKnora API Key 只在 AI 模块内使用，每租户一把，权限范围限定为本租户；不发给业务系统和浏览器。
 
-## 网页版 Agent 与界面
+## 管理界面与 Agent 浮动窗口
 
 **结论：自建界面，不嵌入 WeKnora 网页。** 理由：WeKnora Web UI 有自己的登录、工作区与角色，嵌入就要给用户开 WeKnora 账号并复制权限；浏览器直连会绕过 ACL 分区、计量和审计；它暴露全部知识库与模型设置；风格也与 nova-admin 不一致。嵌入挂件（Embed Widget）同样直连 WeKnora，不采用。
 
 | 界面 | 位置 | 调用方式 | 说明 |
 |------|------|----------|------|
-| 知识库 / Agent 管理 | 平台控制台「能力」分组（已有原型 `#kb`、`#agents`） | 用户 Token → AI 模块 | 文档列表、解析状态、检索测试、版本发布、评测；不暴露 WeKnora 概念 |
+| 知识库 / Agent 管理 | 平台控制台「能力」分组（原型 `#kb`、`#agents`） | 用户 Token → AI 模块 | 文档、提示词、Skills、MCP 工具、Agent 版本和评测；不暴露 WeKnora 概念 |
 | 业务内嵌问答面板 | `kaifang-meta-shell` 组件，嵌入智慧档案室等 | 业务后端代理（注入过滤条件，代表用户） | 适用于有强制过滤字段的知识库 / Agent |
 | 桌面端 RAG skill（后续） | `kaifang-harness` 本机 | 用户 Token → AI 模块知识库 MCP | 桌面端 Agent 在本机运行，不使用 WeKnora Agent，见 [Agent 桌面端](../../harness.md) |
-| 网页版 Agent | 平台托管页面 `/kaifang-meta/console/agent/chat/{agent}` | 用户 Token（SSO 静默登录）→ AI 模块 | 只开放未声明强制过滤字段的 Agent；业务系统以链接打开，与标注工作台同一模式 |
+| 业务 Agent 浮动窗口 | `kaifang-meta-shell` 嵌入业务系统 | 浏览器 → 业务后端代理 → AI 模块 SSE | `@` 仅列出当前用户获授权 Agent；业务后端计算过滤条件，并在本地执行业务工具 |
 | 运维调试 | WeKnora 原生 Web UI，运维网段 | WeKnora 管理员账号 | 只看解析、切片、召回效果，不做配置变更（配置以 AI 模块为准） |
 
-**流式协议**：AI 模块把 WeKnora 的 SSE 事件（思考、工具调用、检索引用、回答增量）归一为平台事件，前端组件只认平台格式，更换引擎时前端不改。
+**流式协议**：AI 模块把 DeepSeek Harness、未来 Pi Agent / WeKnora 的 SSE、ACP 或 SDK 事件归一为平台事件；前端只认平台格式，不接收引擎内部推理轨迹。Agent 运行时抽象见 [AI 模块设计](../ai/overview.md)。
 
 ```http
-POST /kaifang-meta/platform/ai/v1/agents/agent.archive-qa/chat
+POST /kaifang-meta/platform/ai/v1/agents/agent.archive-qa/conversations/{conversation_id}/runs
 Accept: text/event-stream
 ```
 
@@ -161,11 +162,11 @@ Label Studio 仍只嵌入编辑器组件，不部署其服务；WeKnora 与标�
 
 ## 实施顺序
 
-1. **PoC（两周）**：部署 WeKnora（PostgreSQL + MinIO 模式），模型指向模型网关；用 1 万件档案文本验证分区检索、标签过滤是否可下推、SSE 事件格式、MinIO 路径前缀是否可配到 `ai/`。
-2. **AI 模块适配层**：知识库 / 文档 / 检索接口、分区映射、文档映射表、后置校验、SSE 归一。
-3. **控制台页面**：知识库、Agent 管理页对接真实接口。
-4. **存量导入**：按全宗分批夜间入库，先公开 / 内部密级。
-5. **网页版 Agent 与业务问答面板**、评测集标注模板。
+1. **知识库 PoC**：部署 WeKnora（PostgreSQL + MinIO 模式），用 1 万件档案文本验证分区检索、标签过滤、MinIO 路径和向量模型网关。
+2. **知识库适配层**：完成知识库 / 文档 / 检索接口、分区映射、文档映射表与后置校验。
+3. **Agent Runtime PoC**：先验证 DeepSeek Harness 服务化、可恢复会话、工具委派回传、事件归一和模型网关。
+4. **运行时适配**：WeKnora Agent 后续实现 `AgentRuntimeProvider`，校验工具调用、引用、取消和会话恢复契约后再开放发布。
+5. **控制台与业务接入**：管理页、浮动窗口、业务后端工具执行和评测集。
 
 ## 待确认
 

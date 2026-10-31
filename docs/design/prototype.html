@@ -156,6 +156,12 @@ pre.code { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.
 .msg.u { align-self: flex-end; background: var(--accent-soft); }
 .msg.a { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
 .cite { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.agent-launcher { position: fixed; right: 24px; bottom: 24px; z-index: 40; border: 0; border-radius: 999px; background: var(--accent); color: var(--panel); padding: 12px 18px; box-shadow: 0 8px 24px rgb(0 0 0 / .18); cursor: pointer; }
+.agent-float { position: fixed; right: 24px; bottom: 24px; z-index: 45; width: 390px; height: min(620px, calc(100vh - 48px)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 16px 48px rgb(0 0 0 / .2); display: flex; flex-direction: column; overflow: hidden; }
+.agent-float .af-head { padding: 12px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.agent-float .af-body { flex: 1; min-height: 0; overflow: auto; padding: 14px; }
+.agent-float .af-compose { padding: 12px; border-top: 1px solid var(--line); }
+.agent-float .msg { max-width: 92%; }
 .step { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
 /* login / portal */
@@ -298,7 +304,7 @@ function capFilter(a, k, v) {
 }
 const PLATFORM_NAV = [
   ['认证', [['users', '身份账号'], ['orgs', '机构管理'], ['tenants', '租户管理'], ['apps', '应用接入'], ['releases', '客户端发布'], ['roles', '角色与权限']]],
-  ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型']]],
+  ['能力', [['caps', '能力目录'], ['space', '应用空间'], ['kb', '知识库'], ['agents', 'Agent'], ['models', '模型'], ['prompts', '提示词'], ['skills', 'Skills'], ['mcp', 'MCP 工具']]],
   ['数据', [['ingest', '数据采集'], ['label', '标注工单'], ['anno-mine', '我的标注', '3'], ['anno-tpl', '场景模板']]],
   ['运维', [['jobs', '任务调度'], ['settings', '平台设置'], ['ops', '运维看板', null, [['MinIO', 'http://localhost:9001'], ['APISIX', 'http://localhost:9180/ui/'], ['ETCD', 'http://localhost:9010']]]]],
 ];
@@ -306,7 +312,7 @@ const ARCHIVE_NAV = [
   ['业务', [['ar-home', '工作台'], ['ar-list', '档案管理', '1,284'], ['ar-import', '档案导入', '2'], ['ar-label', '标注任务', '1'], ['ar-qa', '智能问答']]],
   ['系统', [['ar-roles', '角色与权限']]],
 ];
-const PARENT = { 'op-ocr': 'caps', 'kb-detail': 'kb', 'agent-detail': 'agents', 'ar-detail': 'ar-list',
+const PARENT = { 'op-ocr': 'caps', 'kb-detail': 'kb', 'agent-detail': 'agents', 'ar-detail': 'ar-list', 'ar-agent-widget': 'ar-home',
   'ar-batch': 'ar-import', 'anno-task': 'label', 'anno-new': 'label', 'anno-layout': 'anno-tpl', 'ar-send': 'ar-import', 'ar-writeback': 'ar-import' };
 // 导入 → 标注 → 回写 跨系统工作流
 const FLOW = [['ar-import', '导入', '智慧档案室'], ['ar-batch', '解析与预抽取', '智慧档案室'], ['ar-send', '送标注', '智慧档案室'],
@@ -347,7 +353,7 @@ const pages = {
       <div class="bar"><b style="font-size:15px">admin</b><span class="sp" style="flex:1"></span><select class="inp" style="width:auto"><option>省档案馆</option><option>市档案馆</option></select></div>
       <div class="apps">
         ${[['KM', '中台控制台', '用户 · 能力 · 采集 · 调度', '#users'], ['档', '智慧档案室', '著录 · 检索 · 问答', '#ar-home'],
-           ['文', '文书加工系统', '原型未绘制'], ['问', '政策法规问答', '网页版 Agent', '#agent-chat'], ['统', '统建系统', '原型未绘制'], ['库', '库房管理', '原型未绘制'], ['AI', 'kaifang-harness', 'Agent 桌面端 · 下载客户端', '#download']]
+           ['文', '文书加工系统', '原型未绘制'], ['问', '档案 Agent 窗口', '由智慧档案室授权', '#ar-agent-widget'], ['统', '统建系统', '原型未绘制'], ['库', '库房管理', '原型未绘制'], ['AI', 'kaifang-harness', 'Agent 桌面端 · 下载客户端', '#download']]
           .map(([m, n, d, h]) => h
             ? `<a class="app" href="${h}"><span class="mark">${m}</span><div><b>${n}</b><div class="d">${d}</div></div><span class="mu">进入</span></a>`
             : `<div class="app off"><span class="mark">${m}</span><div><b>${n}</b><div class="d">${d}</div></div></div>`).join('')}
@@ -556,21 +562,43 @@ km.capability("archive.import.ocr").invoke(req, OcrResult.class);
       </div>
     </div>`,
 
+  prompts: () => ph('提示词模板', '', '<button class="btn pri">新建模板</button>') +
+    card('全部模板', T(['名称', '标识', '当前版本', '变量', '引用 Agent', '更新人', ''], [
+      ['<a class="lk">档案问答系统提示词</a>', '<span class="m">archive.qa.system</span>', S('v4 · prod', 'ac'), '<span class="m">query, filters</span>', '档案问答助手', '张敏 · 10-26', '<button class="btn ghost">版本</button>'],
+      ['操作前风险检查', '<span class="m">business.action.guard</span>', S('v2 · prod', 'ac'), '<span class="m">action, record</span>', '著录辅助', '陈立 · 10-23', '<button class="btn ghost">版本</button>'],
+      ['法规问答', '<span class="m">policy.qa</span>', S('草稿 v5'), '<span class="m">question</span>', '开放鉴定辅助', '张敏 · 10-25', '<button class="btn ghost">编辑</button>'],
+    ]), true),
+
+  skills: () => ph('Skills', '', '<button class="btn pri">新建 Skill</button>') +
+    card('全部 Skills', T(['名称', '标识', '版本', '类型', '可用工具', '引用 Agent', ''], [
+      ['知识库问答', '<span class="m">kb.answer</span>', S('v2 · 内置', 'ac'), '只读', '<span class="m">kb.search</span>', '档案问答助手', '<button class="btn ghost">详情</button>'],
+      ['档案检索汇总', '<span class="m">archive.search.summary</span>', S('v1 · 应用空间', 'ac'), '只读', '<span class="m">archive.search</span>', '著录辅助', '<button class="btn ghost">详情</button>'],
+      ['生成鉴定草稿', '<span class="m">archive.appraisal.draft</span>', S('草稿 v1'), '需确认', '<span class="m">archive.draft.create</span>', '开放鉴定辅助', '<button class="btn ghost">编辑</button>'],
+    ]), true),
+
+  mcp: () => ph('MCP 工具', '', '<button class="btn pri">登记工具</button>') +
+    card('工具目录', T(['工具', '执行位置', '风险', '入参 Schema', '授权范围', '被 Agent 使用', '状态'], [
+      ['<span class="m">kb.search</span>', '平台 AI', S('只读', 'ok'), '<span class="m">query · filters</span>', '知识库授权', '知识库问答', D('可用', 'ok')],
+      ['<span class="m">archive.search</span>', '业务后端', S('只读', 'ok'), '<span class="m">query · fonds</span>', '档案检索权限', '档案问答助手', D('可用', 'ok')],
+      ['<span class="m">archive.draft.create</span>', '业务后端', S('需确认', 'warn'), '<span class="m">record_id · changes</span>', '著录编辑权限', '开放鉴定辅助', D('待评审', 'warn')],
+    ]), true),
+
   agents: () => ph('Agent', '', '<button class="btn pri">新建 Agent</button>') +
-    card('全部 Agent', T(['名称', '线上版本', '模型', '知识库', '工具', '评测通过率', '调用方', ''], [
-      ['<a class="lk" href="#agent-detail">档案问答助手</a>', S('prod → v4', 'ac'), '<span class="m">llm.chat@1</span>', '档案业务规范库@v7', '3', '<span class="m">91.5%</span>', '智慧档案室', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
-      ['<a class="lk" href="#agent-detail">著录辅助</a>', S('prod → v2', 'ac'), '<span class="m">llm.chat@1</span>', '—', '2', '<span class="m">88.0%</span>', '智慧档案室 · 文书加工', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
-      ['<a class="lk" href="#agent-chat">政策法规问答</a>', S('prod → v3', 'ac'), '<span class="m">llm.chat@1</span>', '政策法规库@v12', '0', '<span class="m">93.2%</span>', '网页版', '<a class="btn ghost" href="#agent-chat">打开</a>'],
-      ['<a class="lk" href="#agent-detail">开放鉴定辅助</a>', S('草稿 v1', ''), '<span class="m">llm.chat@1</span>', '政策法规库@v12', '1', '—', '—', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+    card('全部 Agent', T(['名称', '线上版本', '运行时', '模型', '知识库 / 工具', '评测通过率', '应用', ''], [
+      ['<a class="lk" href="#agent-detail">档案问答助手</a>', S('prod → v4', 'ac'), '<span class="m">DeepSeek Harness</span>', '<span class="m">llm.chat@1</span>', '档案规范库 · 2 工具', '<span class="m">91.5%</span>', '智慧档案室', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+      ['<a class="lk" href="#agent-detail">著录辅助</a>', S('prod → v2', 'ac'), '<span class="m">DeepSeek Harness</span>', '<span class="m">llm.chat@1</span>', '1 Skill · 2 工具', '<span class="m">88.0%</span>', '智慧档案室', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
+      ['<a class="lk" href="#agent-detail">开放鉴定辅助</a>', S('草稿 v1', ''), '<span class="m">DeepSeek Harness</span>', '<span class="m">llm.chat@1</span>', '政策法规库 · 1 工具', '—', '智慧档案室', '<a class="btn ghost" href="#agent-detail">编辑</a>'],
     ]), true),
 
   'agent-detail': () => ph('档案问答助手', 'agent.archive-qa · 草稿 v5', '<button class="btn">保存草稿</button><button class="btn">运行评测</button><button class="btn pri">发布 v5</button>') +
     `<div class="grid" style="grid-template-columns:1fr 1fr 300px">
       ${card('配置', `<dl class="kv" style="grid-template-columns:72px 1fr">
+        <dt>运行时</dt><dd><select class="inp" id="ag-runtime" style="width:100%"><option>DeepSeek Harness · v1</option></select></dd>
         <dt>模型</dt><dd><select class="inp" id="ag-model" style="width:100%"><option>llm.chat@1 · temperature 0.2</option></select></dd>
-        <dt>提示词</dt><dd><textarea class="inp" id="ag-prompt" rows="7" style="width:100%">你是档案业务助手。只依据知识库内容回答，回答末尾列出引用的规范名称。无法确定时说明需要人工确认。</textarea></dd>
+        <dt>提示词</dt><dd class="bar">${S('archive.qa.system@v4', 'ac')}<a class="btn ghost" href="#prompts">选择版本</a></dd>
+        <dt>Skills</dt><dd class="bar">${S('kb.answer@v2')}${S('archive.search.summary@v1')}<a class="btn ghost" href="#skills">添加</a></dd>
         <dt>知识库</dt><dd class="bar">${S('档案业务规范库 @v7', 'ac')}<a class="btn ghost">更换</a></dd>
-        <dt>工具</dt><dd class="bar">${S('ocr.general@2.3')}${S('extract.doc@1.2')}${S('archive.search（业务系统）')}<a class="btn ghost">添加</a></dd></dl>`)}
+        <dt>MCP 工具</dt><dd class="bar">${S('kb.search')}${S('archive.search · 只读')}${S('archive.draft.create · 确认') }<a class="btn ghost" href="#mcp">管理</a></dd></dl>`)}
       ${card('调试', `<div class="chat">
         <div class="msg u">文书档案的保管期限分哪几种？</div>
         <div class="msg a">分为永久、定期 30 年、定期 10 年三种。<div class="cite">${S('归档文件整理规则 DA/T 22-2015')}</div></div>
@@ -929,7 +957,22 @@ annotationClient.createTask(CreateTaskReq.builder()
         ['一号库房 B 区', '<span class="m">19.1 ℃</span>', '<span class="m">52 %</span>', D('正常', 'ok')],
         ['二号库房 C 区', '<span class="m">—</span>', '<span class="m">—</span>', D('传感器离线', 'err')],
       ]), true)}
-    </div>`,
+    </div>` + '<a class="agent-launcher" href="#ar-agent-widget">问 Agent</a>',
+
+  'ar-agent-widget': () => pages['ar-home']() +
+    `<section class="agent-float" aria-label="Agent 对话">
+      <header class="af-head"><b>档案助手</b>${S('DeepSeek Harness', 'ac')}<span class="sp"></span><a class="btn sm" href="#ar-home" aria-label="关闭">关闭</a></header>
+      <div class="af-body">
+        <div class="bar" style="margin-bottom:12px"><span class="m mu">当前 Agent</span>${S('档案问答助手 · prod v4', 'ac')}<button class="btn sm">切换 Agent</button></div>
+        <div class="chat">
+          <div class="msg u">近十年有哪些档案已经到期，需要发起鉴定？</div>
+          <div class="step">@ 档案问答助手 · 检索馆藏 · 调用 archive.search</div>
+          <div class="msg a">检索到 46 件保管期限为定期 10 年且已到期的档案。<div class="cite">${S('46 件档案', 'ac')}${S('档案检索 · 只读')}</div></div>
+          <div class="msg a"><b>创建鉴定草稿</b><p style="margin:6px 0">将为这 46 件档案生成待审核的鉴定批次，当前不会修改档案。</p><div class="bar"><button class="btn sm pri">确认并创建</button><button class="btn sm">取消</button></div></div>
+        </div>
+      </div>
+      <div class="af-compose"><div class="bar"><input class="inp" id="ar-agent-input" placeholder="输入问题，使用 @ 选择 Agent" style="flex:1"><button class="btn pri">发送</button></div></div>
+    </section>`,
 
   'ar-list': () => ph('档案管理', '文书档案', '<button class="btn">批量 OCR</button><button class="btn">导出目录</button><button class="btn pri">新建著录</button>') +
     `<div class="bar"><select class="inp" id="f-qz"><option>全宗 J001</option></select><select class="inp" id="f-nd"><option>年度 2024</option></select><select class="inp" id="f-qx"><option>全部保管期限</option><option>永久</option><option>定期 30 年</option><option>定期 10 年</option></select><input class="inp" id="f-kw" placeholder="档号 / 题名 / 责任者" style="width:240px"><button class="btn">检索</button></div>` +
@@ -975,23 +1018,6 @@ annotationClient.createTask(CreateTaskReq.builder()
             <div class="cite">${S('工具 · archive.search', 'ac')}<a class="btn sm" href="#ar-list">查看 46 件</a></div></div>
         </div>
         <div class="bar"><input class="inp" id="qa-in" placeholder="询问档案业务或馆藏情况" style="flex:1;padding:9px 12px"><button class="btn pri">发送</button></div>
-      </div>
-    </div>`,
-
-  'agent-chat': () => `<div class="card" style="display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 96px)">
-      <div style="border-right:1px solid var(--line);padding:12px 8px;display:flex;flex-direction:column;gap:10px">
-        <button class="btn pri">新对话</button>
-        <div class="tree"><a class="on">开放鉴定的法定期限</a><a>涉密档案降密程序</a><a>电子档案长期保存格式</a></div>
-      </div>
-      <div style="display:flex;flex-direction:column;padding:20px 24px;gap:16px">
-        <div class="bar"><b style="font-size:15px">政策法规问答</b>${S('prod v3', 'ac')}<span class="m mu">llm.chat@1 · kb.policy@v12</span></div>
-        <div class="chat" style="flex:1">
-          <div class="msg u">档案开放鉴定的法定期限是多少？到期没鉴定怎么办？</div>
-          <div class="step">检索 kb.policy · 6 条 → 重排 3 条 → 生成</div>
-          <div class="msg a">档案一般应自形成之日起满 25 年向社会开放；经济、教育、科技、文化等类档案可以少于 25 年，涉及国家安全或重大利益等的可以多于 25 年。到期前应组织开放审核，未完成审核的不得开放，并应记录延期原因。
-            <div class="cite">${S('档案法 第二十七条')}${S('档案开放审核办法 第八条')}${S('档案开放审核办法 第十二条')}</div></div>
-        </div>
-        <div class="bar"><input class="inp" id="ac-in" placeholder="询问档案政策法规" style="flex:1;padding:9px 12px"><button class="btn pri">发送</button></div>
       </div>
     </div>`,
 
@@ -1282,8 +1308,8 @@ function ldMode(m) {
 const CRUMB = {
   users: '认证 / <b>身份账号</b>', orgs: '认证 / <b>机构管理</b>', tenants: '认证 / <b>租户管理</b>', apps: '认证 / <b>应用接入</b>', releases: '认证 / <b>客户端发布</b>', roles: '认证 / <b>角色与权限</b>', caps: '能力 / <b>能力目录</b>', space: '能力 / <b>应用空间</b>', 'op-ocr': '能力 / 能力目录 / <b>通用 OCR</b>',
   kb: '能力 / <b>知识库</b>', 'kb-detail': '能力 / 知识库 / <b>档案业务规范库</b>', agents: '能力 / <b>Agent</b>', 'agent-detail': '能力 / Agent / <b>档案问答助手</b>',
-  models: '能力 / <b>模型</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', 'anno-layout': '数据 / 场景模板 / <b>企业登记著录 · 布局</b>', 'label-form': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>企业登记档案著录</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>', 'agent-chat': '<b>政策法规问答</b>',
-  'ar-home': '<b>工作台</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',
+  models: '能力 / <b>模型</b>', prompts: '能力 / <b>提示词模板</b>', skills: '能力 / <b>Skills</b>', mcp: '能力 / <b>MCP 工具</b>', ingest: '数据 / <b>数据采集</b>', label: '数据 / <b>标注工单</b>', 'anno-task': '数据 / 标注工单 / <b>IMP-20241026-03</b>', 'anno-new': '数据 / 标注工单 / <b>新建工单</b>', 'anno-mine': '数据 / <b>我的标注</b>', 'anno-tpl': '数据 / <b>场景模板</b>', 'anno-layout': '数据 / 场景模板 / <b>企业登记著录 · 布局</b>', 'label-form': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>企业登记档案著录</b>', settings: '运维 / <b>平台设置</b>', 'label-free': '<a class="lk" href="#anno-mine">我的标注</a> / <b>印章样本自采</b>', 'label-work': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>IMP-20241026-03 著录校对</b>', 'label-review': '<a class="lk" href="#ar-label">智慧档案室 · 标注任务</a> / <b>质检与回传</b>', jobs: '运维 / <b>任务调度</b>',
+  'ar-home': '<b>工作台</b>', 'ar-agent-widget': '<b>工作台 · Agent</b>', 'ar-list': '<b>档案管理</b>', 'ar-detail': '档案管理 / <b>J001-2024-WS30-0012</b>', 'ar-qa': '<b>智能问答</b>',
   'ar-import': '<b>档案导入</b>', 'ar-batch': '档案导入 / <b>IMP-20241026-03</b>', 'ar-send': '档案导入 / IMP-20241026-03 / <b>送标注</b>', 'ar-writeback': '档案导入 / IMP-20241026-03 / <b>回写确认</b>', 'ar-label': '<b>标注任务</b>', 'ar-roles': '系统 / <b>角色与权限</b>',
 };
 
@@ -1293,7 +1319,6 @@ function render() {
   const html = pages[route]();
   const el = document.getElementById('app');
   if (['login', 'portal', 'download'].includes(route)) el.innerHTML = html;
-  else if (route === 'agent-chat') el.innerHTML = `<div class="shell wb">${topbar('KM', 'Agent', CRUMB[route])}<main class="main">${html}</main></div>`;
   else if (route.startsWith('label-')) el.innerHTML = `<div class="shell wb">${topbar('KM', '标注工作台', CRUMB[route])}<main class="main">${html}</main></div>`;
   else el.innerHTML = shell(route.startsWith('ar-') ? 'archive' : 'platform', route, CRUMB[route], html);
   el.scrollTop = 0;

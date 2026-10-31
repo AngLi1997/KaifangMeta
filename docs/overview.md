@@ -14,12 +14,13 @@
 
 平台内部按模块隔离：每个模块独立 schema，模块间只走接口调用，不跨模块访问表，后续可按需拆出。
 
-以下四类是平台的**独立进程**（部署形态，不算业务服务）：
+以下独立进程是平台模块的执行 / 存储提供方（部署形态，不算业务服务）：
 
 - **算子节点** `kaifang-meta-operator × N`：GPU / 异构依赖，按算子独立镜像
 - **kaifang-meta-platform-worker × N**：与平台同一代码库，不同启动入口，从 PostgreSQL 任务表领取并执行异步任务与流水线
 - **kaifang-meta-edge-agent × N**：部署在现场，对接硬件
-- **kaifang-meta-weknora × N** + **kaifang-meta-docreader × N**：开源 WeKnora，AI 模块的知识库与 Agent 引擎，只在内网由 AI 模块调用，见 [WeKnora](platform/capability/weknora.md)
+- **kaifang-meta-ai-runtime × N**：AI 模块的 Node.js 运行进程，首版适配 DeepSeek Harness，只由平台 AI 模块通过内网调用，见 [AI 模块](platform/ai/overview.md)
+- **kaifang-meta-weknora × N** + **kaifang-meta-docreader × N**：开源 WeKnora，AI 模块的知识库索引与检索引擎；WeKnora Agent 是后续可选运行时，不承担首版 Agent 执行，见 [WeKnora](platform/capability/weknora.md)
 
 ## 平台模块
 
@@ -27,7 +28,7 @@
 |------|------|
 | 认证 | [统一认证与身份](platform/auth/identity.md)、[应用接入](platform/auth/app-onboarding.md)、[统一门户](platform/auth/portal.md)、[统一权限组件](platform/auth/authz.md) |
 | 能力 | [能力目录与下放](platform/capability/catalog.md)、[能力点](platform/capability/binding.md)、[算子](platform/capability/operator.md) |
-| AI | [知识库与 Agent 版本](platform/capability/knowledge-agent.md)、[知识库与 Agent 引擎（WeKnora）](platform/capability/weknora.md) |
+| AI | [AI 模块：Agent 管理与运行](platform/ai/overview.md)、[知识库与 Agent 版本](platform/capability/knowledge-agent.md)、[WeKnora 知识库引擎](platform/capability/weknora.md) |
 | 数据采集 | [数据采集](platform/ingest.md) |
 | 数据标注 | [数据标注](platform/annotation/overview.md) |
 | 任务调度 | [定时任务与异步处理](platform/scheduler.md) |

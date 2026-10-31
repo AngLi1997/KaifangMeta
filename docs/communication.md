@@ -129,3 +129,32 @@ sequenceDiagram
 
 - 业务前端的问答面板、检索框等平台组件请求**本业务后端**，业务后端计算用户过滤条件后代表用户调用平台（SSE 透传），浏览器不持有 Service Token，见 [能力目录](platform/capability/catalog.md)。
 - 网关对 SSE 路由关闭响应缓冲（`proxy_buffering off`），读超时放宽到 5 分钟。
+
+### Agent 浮动窗口与业务工具
+
+业务系统登录态仍由业务系统维护。`kaifang-meta-shell` 的浮动窗口只调用本业务后端；业务后端把本地用户映射到平台 `sub`，以 Service Token + `X-KM-On-Behalf-Of`（或 Token Exchange）调用 AI 模块，并附上自身计算的业务权限过滤条件。AI 模块校验 `client_id × tid` 的 Agent 授权与配额，记录 `sub`；不复制业务系统的角色表，也不接受浏览器提供的权限过滤条件。
+
+Agent 调用业务写工具时，平台不能主动连业务系统。AI 模块以服务端内部 SSE 事件 `tool.delegation.required` 把工具名和经过 Schema 校验的参数交给发起请求的业务后端；业务后端按当前 `sub` 做本地权限校验，必要时等待用户确认，然后执行本地 API。结果通过 `POST /kaifang-meta/platform/ai/v1/runs/{run_id}/tool-results` 回传，`Idempotency-Key` 使用 `run_id + tool_call_id`。该事件不透传给浏览器；浏览器只看到工具状态、确认请求和脱敏结果摘要。
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as 业务浮动窗口
+  participant B as 业务后端
+  participant G as APISIX
+  participant AI as 平台 AI 模块
+  participant R as AI Runtime
+  U->>B: 用户消息
+  B->>G: Agent SSE（Service Token + 代表用户 + 业务过滤条件）
+  G->>AI: 校验身份与 scope
+  AI->>R: 运行 Agent
+  R-->>AI: 工具委派事件
+  AI-->>B: 内部 SSE：tool.delegation.required
+  B->>B: 按用户本地权限执行业务工具
+  B->>G: POST tool-results（幂等）
+  G->>AI: 继续同一 run
+  AI->>R: 工具结果 / 用户确认
+  R-->>AI: 后续回答事件
+  AI-->>B: 标准 SSE
+  B-->>U: 回答与执行状态
+```

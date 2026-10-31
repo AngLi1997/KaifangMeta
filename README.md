@@ -11,7 +11,7 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | 业务系统 | 各自独立部署 | 智慧档案室、文书加工系统、统建系统、库房管理 |
 | 客户端 | Agent 桌面端 `kaifang-harness` | 统一认证，本机 Agent 使用平台模型，知识库经平台 MCP，版本在平台发布 |
 
-独立进程：算子节点 `kaifang-meta-operator`、知识库与 Agent 引擎 `kaifang-meta-weknora`（开源 WeKnora）、`kaifang-meta-platform-worker`（PostgreSQL 任务表）、`kaifang-meta-edge-agent`（现场硬件）。平台基础设施只有 PostgreSQL + pgvector、Redis、MinIO 三件。详见 [总体架构](docs/overview.md)。
+独立进程：算子节点 `kaifang-meta-operator`、AI Agent Runtime `kaifang-meta-ai-runtime`（首版 DeepSeek Harness）、知识库引擎 `kaifang-meta-weknora`（开源 WeKnora）、`kaifang-meta-platform-worker`（PostgreSQL 任务表）、`kaifang-meta-edge-agent`（现场硬件）。平台基础设施只有 PostgreSQL + pgvector、Redis、MinIO 三件。详见 [总体架构](docs/overview.md)。
 
 ## 文档目录
 
@@ -35,8 +35,9 @@ kaifang-meta 中台的架构设计文档仓库：文字设计 + 架构图 + 高�
 | [能力目录与下放](docs/platform/capability/catalog.md) | 能力如何登记、授权给业务 | 统一目录、应用空间、四层下放、数据范围、计量配额 | 设计中 |
 | [能力点](docs/platform/capability/binding.md) | 代码与平台配置的分工 | 代码声明能力点，平台配置版本 / 参数 / 灰度 | 设计中 |
 | [算子](docs/platform/capability/operator.md) | 如何开发和接入一个算子 | 统一算子协议、部署与复用 | 设计中 |
-| [知识库与 Agent 版本](docs/platform/capability/knowledge-agent.md) | 知识库 / Agent 如何发布回滚 | 不可变快照、`prod` 别名、评测回归 | 设计中 |
-| [知识库与 Agent 引擎（WeKnora）](docs/platform/capability/weknora.md) | 如何用 WeKnora 承载知识库与网页版 Agent | 部署与对象映射、海量档案导入与存储、分区权限、自建界面、与标注的关系 | 设计中 |
+| [AI 模块：Agent 管理与运行](docs/platform/ai/overview.md) | AI 资源如何管理、Agent 如何运行并接入业务系统 | 运行时适配层、DeepSeek Harness、提示词 / Skill / MCP、浮动窗口、身份与业务工具回传 | 设计中 |
+| [知识库与 Agent 版本](docs/platform/capability/knowledge-agent.md) | 知识库 / Agent 如何发布回滚 | 不可变快照、`prod` 别名、依赖锁定与评测回归 | 设计中 |
+| [WeKnora 知识库引擎](docs/platform/capability/weknora.md) | AI 模块如何用 WeKnora 建设知识库 | 部署与对象映射、海量档案导入与存储、分区权限；WeKnora Agent 为后续运行时 | 设计中 |
 | **平台 · 数据与调度** | | | |
 | [数据标注](docs/platform/annotation/overview.md) | 标注模块总览 | 模块边界、分配标注（任务池 / 指定用户）与自由标注、平台用户与权限、核心对象、状态机、分期 | 部分实现 |
 | [Label Studio 集成与语言](docs/platform/annotation/labelstudio.md) | 编辑器如何构建、嵌入、汉化 | 源码构建、嵌入接口、汉化来源、平台级中英文控制 | 部分实现 |

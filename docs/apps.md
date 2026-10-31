@@ -5,7 +5,7 @@
 ## 要点
 
 - **应用 = 平台中登记的一个接入方**：一个 `client_id`、一个网关前缀、一个应用空间 `space.<app>`、一组平台授权与事件订阅。业务系统、平台控制台、桌面端都是应用，平台模块和独立进程不是。
-- **应用之间互不直连**：应用 → 平台、应用 → 应用都经网关 REST + Service Token；平台 → 应用只发事件。应用间不共享库、不共享存储、不经平台中转业务事件。
+- **应用之间互不直连**：应用 → 平台、应用 → 应用都经网关 REST + Service Token；平台 → 应用只发事件。Agent 操作业务系统时，由发起会话的业务后端本地执行工具并把结果回传平台，平台不主动调用业务接口。应用间不共享库、不共享存储、不经平台中转业务事件。
 - **数据归属跟着应用走**：每个业务系统自有数据库与对象存储，存业务主数据和原件；平台只存「平台侧」数据（身份、能力配置、调用记录、任务、标注、知识库索引），按模块 schema、按租户隔离。
 - **文件跨边界只走预签名 URL**：业务系统永远拿不到平台 MinIO 的密钥，平台也不访问业务存储；平台对象按 `{业务目录}/{tenant_id}/{client_id}/…` 组织，临时对象有保留期。
 - **任何跨应用读写都可审计**：调用方 `client_id`、代表的 `sub`、`X-KM-Request-Id` 贯穿网关日志、平台审计与业务日志。
@@ -19,7 +19,7 @@
 | 文书加工系统 | `kaifang-meta-doc-process` | web | `/kaifang-meta/doc` | 透传自验 | 文书扫描、图像处理、OCR 加工；加工成果交付给智慧档案室 |
 | 统建系统 | `kaifang-meta-unified-build` | web | `/kaifang-meta/ub` | 网关托管 | 面向多个单位统一建设的业务系统，开通多个租户 |
 | 库房管理 | `kaifang-meta-warehouse` | web | `/kaifang-meta/wh` | 业务自管（过渡） | 库房、库位、出入库与环境管理；存量系统，迁移前只能以应用身份调用平台 |
-| Agent 桌面端 | `kaifang-harness` | desktop | `/kaifang-meta/harness` | 用户 Token 直连平台 | 没有业务后端，Agent 在本机运行，用 `space.harness` 的授权直接用模型，知识库经平台知识库 MCP（后续），见 [Agent 桌面端](harness.md) |
+| Agent 桌面端 | `kaifang-harness` | desktop | `/kaifang-meta/harness` | 用户 Token 直连平台 | 没有业务后端，Agent 在本机运行，用 `space.harness` 的授权直接用模型，知识库经平台知识库 MCP（后续）；与 AI 模块的服务端 Agent 会话分开，见 [Agent 桌面端](harness.md) |
 
 每个应用接入后自动拥有：
 
@@ -91,8 +91,9 @@ Content-Type: application/json
 | 应用描述、密钥、应用成员名单 | 平台 · 认证 | 平台 PostgreSQL `iam` schema（`client`、`client_secret`、`app_member`） |
 | 控制台权限 | 平台控制台（认证模块托管） | 平台 PostgreSQL `console_authz` schema |
 | 能力目录、能力点绑定、调用记录、计量 | 平台 · 能力 | `capability` schema |
-| 知识库定义、版本、文档映射、Agent 快照、会话审计 | 平台 · AI | `ai` schema，按租户隔离 |
-| 切片、向量、关键词索引、Agent 运行态 | 平台 · AI 的引擎 WeKnora | 独立数据库 `kaifang-meta-weknora`（pgvector），按 WeKnora 租户隔离，见 [WeKnora](platform/capability/weknora.md) |
+| 模型配置、提示词 / Skill / MCP 版本、知识库定义、Agent 快照、会话与运行审计 | 平台 · AI | `ai` schema；资源定义按应用空间共享，会话与运行按租户隔离，见 [AI 模块](platform/ai/overview.md) |
+| Agent 引擎运行态 | 平台 · AI Runtime | 首版 `kaifang-meta-ai-runtime` 承载 DeepSeek Harness；运行事件归 AI 模块管理 |
+| 切片、向量、关键词索引 | 平台 · AI 知识库引擎 WeKnora | 独立数据库 `kaifang-meta-weknora`（pgvector），按 WeKnora 租户隔离；WeKnora Agent 为后续可选运行时，见 [WeKnora](platform/capability/weknora.md) |
 | 任务、流水线状态 | 平台 · 任务调度 | `jobs` schema |
 | 标注工单、结果版本 | 平台 · 标注 | `annotation` schema |
 | 业务主数据（档案、著录、库位、出入库……）、本地用户与权限、事件收件箱 `km_event_inbox` | 各业务系统 | 业务自己的数据库 |

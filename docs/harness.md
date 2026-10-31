@@ -5,7 +5,7 @@
 ## 要点
 
 - **统一认证**：OIDC 授权码 + PKCE，打开系统浏览器登录，经本机回环地址回调（RFC 8252）；公共客户端，不内置 `client_secret`。Token 存操作系统凭据库，不写明文文件。
-- **Agent 在本机，不用平台 Agent**：桌面端的 Agent 由 DeepSeek harness 在本机编排，不调用平台 AI 模块的 Agent（WeKnora），只经能力点使用平台模型。
+- **桌面端与服务端 Agent 分开**：桌面端的 Agent 继续由 DeepSeek harness 在本机编排；平台业务 Agent 由 AI 模块的 DeepSeek Harness Runtime 首版运行。两者会话、工具权限和发布版本独立，桌面端不复用业务系统本地用户会话。
 - **知识库经 MCP（后续）**：后续开发的 RAG skill 通过平台知识库 MCP 检索 WeKnora 知识库；MCP 由 AI 模块代理 WeKnora 的知识库 MCP，桌面端不直连 WeKnora，见 [WeKnora](platform/capability/weknora.md)。
 - **授权与配额**：桌面端拥有自己的应用空间 `space.harness`，模型、知识库按「应用 × 租户」授权给桌面端，另加**用户级配额**；平台按用户 Token 审计到人。
 - **数据边界**：桌面端没有业务后端，无法计算业务权限过滤条件，因此**只能使用未声明强制过滤字段的知识库**（制度、规范、公共知识）；带业务 ACL 的档案知识库仍只能经业务系统后端使用。
@@ -70,7 +70,7 @@ sequenceDiagram
 | 对话 | `POST /kaifang-meta/platform/capability/v1/bindings/harness.chat/invoke`（SSE） | 能力点绑定到模型（如 `llm.chat@1`），换模型不需要发新版 |
 | 知识库检索（后续，RAG skill） | `POST /kaifang-meta/platform/ai/v1/mcp`（MCP Streamable HTTP） | AI 模块代理 WeKnora 知识库 MCP；工具列表只含已授权给桌面端、且无强制过滤字段的知识库 |
 
-本机 Agent 的编排、工具调用、技能（skill）都在桌面端完成，平台只提供模型和知识库两类能力，不提供 Agent 会话。
+本机 Agent 的编排、工具调用、技能（skill）仍在桌面端完成；平台 AI 模块还提供面向业务系统的服务端 Agent 会话，见 [AI 模块：Agent 管理与运行](platform/ai/overview.md)。桌面端不会因此变成服务端 Agent 的调用入口。
 
 **RAG skill 调用知识库 MCP**：
 
